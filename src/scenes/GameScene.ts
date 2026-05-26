@@ -31,6 +31,24 @@ const UPGRADE_POOL: UpgradeOption[] = [
   { id: 's_lifesteal',  name: 'Vampiric Touch',      description: 'Steal 8% of damage dealt as HP.',                type: 'stat', statKey: 'lifesteal', statValue: 0.08 },
   { id: 's_lifesteal2', name: 'Blood Pact',          description: 'Steal 15% of damage dealt as HP.',               type: 'stat', statKey: 'lifesteal', statValue: 0.15 },
   { id: 's_fullheal',   name: 'Divine Potion',       description: 'Fully restore all HP.',                          type: 'stat', statKey: 'healHp', statValue: 999 },
+
+  // === 10 NEW SKILLS ===
+
+  // OFFENSIVE WEAPONS
+  { id: 'w_whirlwind',   name: 'Whirlwind Blade',   description: 'Massive spinning slash hitting all enemies nearby.', type: 'weapon', weaponType: WEAPON_TYPES.WHIRLWIND },
+  { id: 'w_deathray',    name: 'Death Ray',          description: 'Piercing laser beam through all enemies in line.',   type: 'weapon', weaponType: WEAPON_TYPES.DEATH_RAY },
+  { id: 'w_explosive',   name: 'Explosive Bolts',    description: 'Crossbow bolts explode on impact (AOE r=55).',       type: 'weapon', weaponType: WEAPON_TYPES.EXPLOSIVE_BOLTS },
+  { id: 'w_shockwave',   name: 'Shockwave',          description: 'Ground shockwave erupts, knocking back all nearby enemies.', type: 'weapon', weaponType: WEAPON_TYPES.SHOCKWAVE },
+
+  // OFFENSIVE PASSIVES
+  { id: 's_crit',        name: 'Eagle Eye',          description: '20% critical strike chance — deals 3× damage.',      type: 'stat', statKey: 'critChance', statValue: 0.20 },
+  { id: 's_overkill',    name: 'Overkill',           description: 'Enemies killed explode dealing 40 dmg in radius 80.', type: 'stat', statKey: 'overkill', statValue: 1 },
+  { id: 's_execute',     name: 'Execute',            description: 'Instantly kill enemies below 10% HP.',               type: 'stat', statKey: 'execute', statValue: 0.10 },
+
+  // DEFENSIVE PASSIVES
+  { id: 's_thorns',      name: 'Thorns',             description: 'Return 25% of damage taken back to attackers.',      type: 'stat', statKey: 'thorns', statValue: 0.25 },
+  { id: 's_secondwind',  name: 'Second Wind',        description: 'When HP drops below 20%, auto-heal 35% of max HP.', type: 'stat', statKey: 'secondWind', statValue: 0.35 },
+  { id: 's_xpsurge',     name: 'Scholar\'s Tome',    description: '+60% XP gain from all sources.',                    type: 'stat', statKey: 'xpBonus', statValue: 0.60 },
 ];
 
 export class GameScene extends Phaser.Scene {
@@ -60,6 +78,12 @@ export class GameScene extends Phaser.Scene {
   private xpOrbs!: Phaser.Physics.Arcade.Group;
   private goldCoins!: Phaser.Physics.Arcade.Group;
 
+  // Loot magnet pickups
+  private lootMagnets!: Phaser.Physics.Arcade.Group;
+  private lootMagnetTimer: number = 0;
+  private lootMagnetCount: number = 0;
+  private MAX_MAGNETS: number = 2;
+
   constructor() {
     super({ key: SCENE_KEYS.GAME });
   }
@@ -79,6 +103,7 @@ export class GameScene extends Phaser.Scene {
     this.createWorld();
     this.createPlayer();
     this.createPickupGroups();
+    this.createLootMagnetGroup();
     this.createJoystick();
     this.setupCamera();
     this.createSystems();
@@ -102,6 +127,7 @@ export class GameScene extends Phaser.Scene {
     this.waveSystem.update(delta);
     this.updatePickupMagnetism();
     this.updatePickupOverlaps();
+    this.trySpawnLootMagnet(delta);
     this.updateHUD();
 
     // Remove dead enemies
@@ -178,6 +204,28 @@ export class GameScene extends Phaser.Scene {
   private createPickupGroups(): void {
     this.xpOrbs = this.physics.add.group();
     this.goldCoins = this.physics.add.group();
+  }
+
+  private createLootMagnetGroup(): void {
+    this.lootMagnets = this.physics.add.group();
+  }
+
+  private trySpawnLootMagnet(delta: number): void {
+    this.lootMagnetTimer += delta;
+    if (this.lootMagnetTimer >= 50000 && this.lootMagnetCount < this.MAX_MAGNETS) {
+      this.lootMagnetTimer = 0;
+      // Spawn at random position near center of world (not edge)
+      const x = 200 + Math.random() * (WORLD_WIDTH - 400);
+      const y = 200 + Math.random() * (WORLD_HEIGHT - 400);
+      const mag = this.physics.add.sprite(x, y, 'loot_magnet', 0).setDepth(4);
+      if (this.anims.exists('loot_magnet_pulse')) mag.play('loot_magnet_pulse');
+      (mag.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
+      this.lootMagnets.add(mag);
+      this.lootMagnetCount++;
+
+      // Pulsing glow effect
+      this.tweens.add({ targets: mag, scaleX: 1.2, scaleY: 1.2, duration: 600, yoyo: true, repeat: -1 });
+    }
   }
 
   private spawnXpOrb(x: number, y: number, amount: number): void {
@@ -287,23 +335,22 @@ export class GameScene extends Phaser.Scene {
   // ── Pause Button ───────────────────────────────────────────────────────────
 
   private createPauseButton(): void {
+    const x = GAME_WIDTH - 26, y = 68 + 18; // below the XP bar
     const btn = this.add.graphics().setScrollFactor(0).setDepth(200);
-    const x = GAME_WIDTH - 30, y = 30;
 
     const draw = (hover: boolean) => {
       btn.clear();
-      btn.fillStyle(hover ? 0x333300 : 0x000000, 0.7);
-      btn.fillRoundedRect(x - 22, y - 18, 44, 36, 5);
-      btn.lineStyle(2, COLORS.GOLD);
-      btn.strokeRoundedRect(x - 22, y - 18, 44, 36, 5);
-      // Pause bars
-      btn.fillStyle(COLORS.GOLD);
-      btn.fillRect(x - 8, y - 10, 6, 20);
-      btn.fillRect(x + 2, y - 10, 6, 20);
+      btn.fillStyle(hover ? 0x443300 : 0x000000, 0.8);
+      btn.fillRoundedRect(x - 20, y - 14, 40, 28, 4);
+      btn.lineStyle(2, 0xB8860B);
+      btn.strokeRoundedRect(x - 20, y - 14, 40, 28, 4);
+      btn.fillStyle(0xFFD700);
+      btn.fillRect(x - 8, y - 8, 5, 16);
+      btn.fillRect(x + 3, y - 8, 5, 16);
     };
     draw(false);
 
-    const zone = this.add.zone(x, y, 44, 36).setScrollFactor(0).setDepth(201).setInteractive();
+    const zone = this.add.zone(x, y, 40, 28).setScrollFactor(0).setDepth(201).setInteractive();
     zone.on('pointerover', () => draw(true));
     zone.on('pointerout', () => draw(false));
     zone.on('pointerdown', () => this.openPauseMenu());
@@ -470,6 +517,33 @@ export class GameScene extends Phaser.Scene {
       g.fillCircle(x, y, 50);
       this.tweens.add({ targets: g, alpha: 0, duration: 600, onComplete: () => g.destroy() });
     });
+
+    // Thorns reflect
+    this.events.on('thorns-reflect', (x: number, y: number, dmg: number) => {
+      const radius = 80;
+      this.enemies.forEach(e => {
+        if (!e.sprite.active) return;
+        const d = Phaser.Math.Distance.Between(x, y, e.sprite.x, e.sprite.y);
+        if (d <= radius) {
+          const dead = e.takeDamage(dmg);
+          showDamageNumber(this, e.sprite.x, e.sprite.y, dmg, false);
+          if (dead) this.handleEnemyDeath(e);
+        }
+      });
+      const g = this.add.graphics().setDepth(20);
+      g.lineStyle(3, 0xFF4444, 0.8);
+      g.strokeCircle(x, y, radius);
+      this.tweens.add({ targets: g, alpha: 0, duration: 300, onComplete: () => g.destroy() });
+    });
+
+    // Second wind visual
+    this.events.on('second-wind-triggered', () => {
+      this.hud.announce('SECOND WIND!', 1500);
+      const flash = this.add.graphics().setScrollFactor(0).setDepth(300);
+      flash.fillStyle(0x00FF88, 0.3);
+      flash.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+      this.tweens.add({ targets: flash, alpha: 0, duration: 400, onComplete: () => flash.destroy() });
+    });
   }
 
   private spawnEnemyProjectile(
@@ -553,6 +627,12 @@ export class GameScene extends Phaser.Scene {
     for (const enemy of this.enemies) {
       if (!enemy.sprite.active) continue;
       enemy.update(dt, px, py);
+      // Execute: instantly kill enemies below threshold HP
+      if (this.player.stats.execute > 0 && enemy.hp < enemy.maxHp * this.player.stats.execute && enemy.hp > 0) {
+        const dead = enemy.takeDamage(enemy.hp);
+        showDamageNumber(this, enemy.sprite.x, enemy.sprite.y, enemy.hp, true);
+        if (dead) this.handleEnemyDeath(enemy);
+      }
     }
   }
 
@@ -615,6 +695,33 @@ export class GameScene extends Phaser.Scene {
         const val = sprite.getData('value') || 1;
         this.player.addGold(val);
         sprite.destroy();
+      }
+    });
+
+    this.lootMagnets.getChildren().forEach((obj) => {
+      const sprite = obj as Phaser.Physics.Arcade.Sprite;
+      if (!sprite.active) return;
+      const dist = Phaser.Math.Distance.Between(px, py, sprite.x, sprite.y);
+      if (dist < 24) {
+        // Collect ALL xp orbs and gold on screen
+        this.xpOrbs.getChildren().forEach((o) => {
+          const os = o as Phaser.Physics.Arcade.Sprite;
+          if (!os.active) return;
+          const val = os.getData('value') || 1;
+          this.player.addXp(val);
+          os.destroy();
+        });
+        this.goldCoins.getChildren().forEach((o) => {
+          const os = o as Phaser.Physics.Arcade.Sprite;
+          if (!os.active) return;
+          const val = os.getData('value') || 1;
+          this.player.addGold(val);
+          os.destroy();
+        });
+        this.lootMagnetCount--;
+        sprite.destroy();
+        this.hud.announce('LOOT MAGNET', 1800);
+        this.checkLevelUp();
       }
     });
   }
@@ -711,6 +818,20 @@ export class GameScene extends Phaser.Scene {
     if (enemy.isBoss) {
       this.hud.announce('BOSS DEFEATED!', 3000);
       this.bossEnemy = null;
+    }
+
+    // Overkill: enemies die exploding
+    if (this.player.stats.overkill > 0) {
+      const ex = enemy.sprite.x, ey = enemy.sprite.y;
+      this.enemies.forEach(e => {
+        if (!e.sprite.active || e === enemy) return;
+        const d = Phaser.Math.Distance.Between(ex, ey, e.sprite.x, e.sprite.y);
+        if (d <= 80) {
+          const dead = e.takeDamage(40);
+          showDamageNumber(this, e.sprite.x, e.sprite.y, 40);
+          if (dead) this.handleEnemyDeath(e);
+        }
+      });
     }
 
     enemy.destroy();

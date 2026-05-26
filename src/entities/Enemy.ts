@@ -3,17 +3,17 @@ import { EnemyType, ENEMY_TYPES, COLORS } from '../constants';
 import { EnemyStats } from '../types';
 
 export const ENEMY_DATA: Record<EnemyType, EnemyStats> = {
-  [ENEMY_TYPES.WOLF]:        { id: ENEMY_TYPES.WOLF,        name: 'Wolf',         hp: 45,   speed: 110, damage: 10, xpDrop: 3,  goldDrop: 1,  color: 0x8B7355, size: 24, isBoss: false },
-  [ENEMY_TYPES.SKELETON]:    { id: ENEMY_TYPES.SKELETON,    name: 'Skeleton',     hp: 35,   speed: 80,  damage: 8,  xpDrop: 2,  goldDrop: 1,  color: 0xF5F5DC, size: 24, isBoss: false },
-  [ENEMY_TYPES.ZOMBIE]:      { id: ENEMY_TYPES.ZOMBIE,      name: 'Zombie',       hp: 90,   speed: 55,  damage: 15, xpDrop: 5,  goldDrop: 2,  color: 0x5A8A5A, size: 28, isBoss: false },
-  [ENEMY_TYPES.GOBLIN]:      { id: ENEMY_TYPES.GOBLIN,      name: 'Goblin',       hp: 50,   speed: 100, damage: 12, xpDrop: 4,  goldDrop: 3,  color: 0x3CB371, size: 22, isBoss: false },
-  [ENEMY_TYPES.NECROMANCER]: { id: ENEMY_TYPES.NECROMANCER, name: 'Necromancer',  hp: 110,  speed: 65,  damage: 0,  xpDrop: 10, goldDrop: 5,  color: 0x4B0082, size: 28, isBoss: false },
-  [ENEMY_TYPES.DEMON]:       { id: ENEMY_TYPES.DEMON,       name: 'Demon',        hp: 160,  speed: 120, damage: 25, xpDrop: 12, goldDrop: 6,  color: 0xCC2200, size: 30, isBoss: false },
-  [ENEMY_TYPES.VAMPIRE]:     { id: ENEMY_TYPES.VAMPIRE,     name: 'Vampire',      hp: 130,  speed: 140, damage: 20, xpDrop: 12, goldDrop: 6,  color: 0x2A0A2A, size: 28, isBoss: false },
-  [ENEMY_TYPES.OGRE_WARLORD]:{ id: ENEMY_TYPES.OGRE_WARLORD,name: 'Ogre Warlord',hp: 800,  speed: 50,  damage: 40, xpDrop: 80, goldDrop: 40, color: 0x8B6914, size: 64, isBoss: true  },
-  [ENEMY_TYPES.BLACK_KNIGHT]:{ id: ENEMY_TYPES.BLACK_KNIGHT, name: 'Black Knight',hp: 1200, speed: 110, damage: 35, xpDrop: 120,goldDrop: 60, color: 0x111111, size: 64, isBoss: true  },
-  [ENEMY_TYPES.ARCLICH]:     { id: ENEMY_TYPES.ARCLICH,     name: 'Arclich',      hp: 600,  speed: 55,  damage: 0,  xpDrop: 150,goldDrop: 75, color: 0x4B0082, size: 64, isBoss: true  },
-  [ENEMY_TYPES.CHAOS_DRAGON]:{ id: ENEMY_TYPES.CHAOS_DRAGON,name: 'Chaos Dragon', hp: 2000, speed: 70,  damage: 50, xpDrop: 200,goldDrop: 100,color: 0x8B0000, size: 64, isBoss: true  },
+  [ENEMY_TYPES.WOLF]:        { id: ENEMY_TYPES.WOLF,        name: 'Wolf',         hp: 135,  speed: 110, damage: 10, xpDrop: 3,  goldDrop: 1,  color: 0x8B7355, size: 24, isBoss: false },
+  [ENEMY_TYPES.SKELETON]:    { id: ENEMY_TYPES.SKELETON,    name: 'Skeleton',     hp: 105,  speed: 80,  damage: 8,  xpDrop: 2,  goldDrop: 1,  color: 0xF5F5DC, size: 24, isBoss: false },
+  [ENEMY_TYPES.ZOMBIE]:      { id: ENEMY_TYPES.ZOMBIE,      name: 'Zombie',       hp: 270,  speed: 55,  damage: 15, xpDrop: 5,  goldDrop: 2,  color: 0x5A8A5A, size: 28, isBoss: false },
+  [ENEMY_TYPES.GOBLIN]:      { id: ENEMY_TYPES.GOBLIN,      name: 'Goblin',       hp: 150,  speed: 100, damage: 12, xpDrop: 4,  goldDrop: 3,  color: 0x3CB371, size: 22, isBoss: false },
+  [ENEMY_TYPES.NECROMANCER]: { id: ENEMY_TYPES.NECROMANCER, name: 'Necromancer',  hp: 330,  speed: 65,  damage: 0,  xpDrop: 10, goldDrop: 5,  color: 0x4B0082, size: 28, isBoss: false },
+  [ENEMY_TYPES.DEMON]:       { id: ENEMY_TYPES.DEMON,       name: 'Demon',        hp: 480,  speed: 120, damage: 25, xpDrop: 12, goldDrop: 6,  color: 0xCC2200, size: 30, isBoss: false },
+  [ENEMY_TYPES.VAMPIRE]:     { id: ENEMY_TYPES.VAMPIRE,     name: 'Vampire',      hp: 390,  speed: 140, damage: 20, xpDrop: 12, goldDrop: 6,  color: 0x2A0A2A, size: 28, isBoss: false },
+  [ENEMY_TYPES.OGRE_WARLORD]:{ id: ENEMY_TYPES.OGRE_WARLORD,name: 'Ogre Warlord',hp: 1600, speed: 50,  damage: 40, xpDrop: 80, goldDrop: 40, color: 0x8B6914, size: 64, isBoss: true  },
+  [ENEMY_TYPES.BLACK_KNIGHT]:{ id: ENEMY_TYPES.BLACK_KNIGHT, name: 'Black Knight',hp: 2400, speed: 110, damage: 35, xpDrop: 120,goldDrop: 60, color: 0x111111, size: 64, isBoss: true  },
+  [ENEMY_TYPES.ARCLICH]:     { id: ENEMY_TYPES.ARCLICH,     name: 'Arclich',      hp: 1200, speed: 55,  damage: 0,  xpDrop: 150,goldDrop: 75, color: 0x4B0082, size: 64, isBoss: true  },
+  [ENEMY_TYPES.CHAOS_DRAGON]:{ id: ENEMY_TYPES.CHAOS_DRAGON,name: 'Chaos Dragon', hp: 4000, speed: 70,  damage: 50, xpDrop: 200,goldDrop: 100,color: 0x8B0000, size: 64, isBoss: true  },
 };
 
 export class Enemy {

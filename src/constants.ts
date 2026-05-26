@@ -46,6 +46,10 @@ export const WEAPON_TYPES = {
   HOLY_CROSS: 'holy_cross',
   FROST_AURA: 'frost_aura',
   CHAIN_LIGHTNING: 'chain_lightning',
+  WHIRLWIND:       'whirlwind',
+  DEATH_RAY:       'death_ray',
+  EXPLOSIVE_BOLTS: 'explosive_bolts',
+  SHOCKWAVE:       'shockwave',
 } as const;
 
 export const ENEMY_TYPES = {

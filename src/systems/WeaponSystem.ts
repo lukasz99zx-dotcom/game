@@ -20,6 +20,10 @@ const WEAPON_COOLDOWNS: Record<WeaponType, number> = {
   [WEAPON_TYPES.HOLY_CROSS]:         0,    // passive rotation
   [WEAPON_TYPES.FROST_AURA]:         0,    // passive
   [WEAPON_TYPES.CHAIN_LIGHTNING]:    1000,
+  [WEAPON_TYPES.WHIRLWIND]:          2500,
+  [WEAPON_TYPES.DEATH_RAY]:          1800,
+  [WEAPON_TYPES.EXPLOSIVE_BOLTS]:    700,
+  [WEAPON_TYPES.SHOCKWAVE]:          2000,
 };
 
 const WEAPON_DAMAGE: Record<WeaponType, number> = {
@@ -29,6 +33,10 @@ const WEAPON_DAMAGE: Record<WeaponType, number> = {
   [WEAPON_TYPES.HOLY_CROSS]:         20,
   [WEAPON_TYPES.FROST_AURA]:         0,
   [WEAPON_TYPES.CHAIN_LIGHTNING]:    35,
+  [WEAPON_TYPES.WHIRLWIND]:          35,
+  [WEAPON_TYPES.DEATH_RAY]:          60,
+  [WEAPON_TYPES.EXPLOSIVE_BOLTS]:    45,
+  [WEAPON_TYPES.SHOCKWAVE]:          40,
 };
 
 export class WeaponSystem {
@@ -144,6 +152,18 @@ export class WeaponSystem {
         break;
       case WEAPON_TYPES.CHAIN_LIGHTNING:
         if (nearest) this.fireChainLightning(px, py, nearest, damage);
+        break;
+      case WEAPON_TYPES.WHIRLWIND:
+        this.fireWhirlwind(px, py, damage);
+        break;
+      case WEAPON_TYPES.DEATH_RAY:
+        if (nearest) this.fireDeathRay(px, py, nearest, damage);
+        break;
+      case WEAPON_TYPES.EXPLOSIVE_BOLTS:
+        if (nearest) this.fireExplosiveBolt(px, py, nearest, damage);
+        break;
+      case WEAPON_TYPES.SHOCKWAVE:
+        this.fireShockwave(px, py, damage);
         break;
     }
   }
@@ -271,11 +291,112 @@ export class WeaponSystem {
     });
   }
 
+  private fireWhirlwind(px: number, py: number, damage: number): void {
+    const radius = 130;
+    // Visual: spinning ring
+    const g = this.scene.add.graphics().setDepth(9);
+    g.lineStyle(4, 0xCCCCFF, 0.8);
+    g.strokeCircle(px, py, radius);
+    g.lineStyle(2, 0x8888FF, 0.5);
+    g.strokeCircle(px, py, radius * 0.6);
+    this.scene.tweens.add({ targets: g, alpha: 0, scaleX: 1.3, scaleY: 1.3, duration: 400, onComplete: () => g.destroy() });
+
+    this.enemies.forEach(e => {
+      if (!e.sprite.active) return;
+      const dist = Phaser.Math.Distance.Between(px, py, e.sprite.x, e.sprite.y);
+      if (dist <= radius) {
+        const dead = this.applyDamageWithLifesteal(e, damage);
+        if (dead) this.scene.events.emit('enemy-died', e);
+        // Knockback
+        const angle = Math.atan2(e.sprite.y - py, e.sprite.x - px);
+        (e.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(Math.cos(angle)*200, Math.sin(angle)*200);
+        this.scene.time.delayedCall(300, () => {
+          if (e.sprite.active) (e.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(0,0);
+        });
+      }
+    });
+  }
+
+  private fireDeathRay(px: number, py: number, target: Enemy, damage: number): void {
+    const angle = Math.atan2(target.sprite.y - py, target.sprite.x - px);
+    const len = 800;
+    const ex = px + Math.cos(angle) * len;
+    const ey = py + Math.sin(angle) * len;
+
+    // Visual beam
+    const g = this.scene.add.graphics().setDepth(9);
+    g.lineStyle(6, 0xFFFFFF, 1.0); g.beginPath(); g.moveTo(px, py); g.lineTo(ex, ey); g.strokePath();
+    g.lineStyle(3, 0x88FFFF, 0.8); g.beginPath(); g.moveTo(px, py); g.lineTo(ex, ey); g.strokePath();
+    this.scene.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
+
+    // Hit all enemies along the beam
+    this.enemies.forEach(e => {
+      if (!e.sprite.active) return;
+      // Point-to-line distance
+      const dx = ex - px, dy = ey - py;
+      const len2 = dx*dx + dy*dy;
+      const t = Math.max(0, Math.min(1, ((e.sprite.x-px)*dx + (e.sprite.y-py)*dy) / len2));
+      const closestX = px + t*dx, closestY = py + t*dy;
+      const distToLine = Math.hypot(e.sprite.x - closestX, e.sprite.y - closestY);
+      if (distToLine <= 20) {
+        const dead = this.applyDamageWithLifesteal(e, damage, true); // always crit
+        if (dead) this.scene.events.emit('enemy-died', e);
+      }
+    });
+  }
+
+  private fireExplosiveBolt(px: number, py: number, target: Enemy, damage: number): void {
+    const dx = target.sprite.x - px, dy = target.sprite.y - py;
+    const dist = Math.hypot(dx, dy);
+    const proj = new Projectile(this.scene, px, py, 'fireball',
+      (dx/dist)*320, (dy/dist)*320, damage, 2000, 1, 1.0);
+    proj.sprite.setData('isExplosive', true);
+    proj.sprite.setData('explodeRadius', 55);
+    this.projectiles.push(proj);
+  }
+
+  private fireShockwave(px: number, py: number, damage: number): void {
+    const maxRadius = 160;
+    let radius = 10;
+    const g = this.scene.add.graphics().setDepth(9);
+
+    const timer = this.scene.time.addEvent({
+      delay: 20, repeat: Math.floor(maxRadius/8) + 2,
+      callback: () => {
+        g.clear();
+        const alpha = 1 - radius/maxRadius;
+        g.lineStyle(5, 0xFFAA00, alpha);
+        g.strokeCircle(px, py, radius);
+        g.lineStyle(2, 0xFFFF00, alpha*0.5);
+        g.strokeCircle(px, py, radius+6);
+        // Damage at current ring
+        this.enemies.forEach(e => {
+          if (!e.sprite.active) return;
+          const d = Phaser.Math.Distance.Between(px, py, e.sprite.x, e.sprite.y);
+          if (Math.abs(d - radius) < 15) {
+            const dead = this.applyDamageWithLifesteal(e, Math.floor(damage/3));
+            if (dead) this.scene.events.emit('enemy-died', e);
+            // Knock outward
+            const a = Math.atan2(e.sprite.y-py, e.sprite.x-px);
+            (e.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(Math.cos(a)*180, Math.sin(a)*180);
+            this.scene.time.delayedCall(250, () => {
+              if(e.sprite.active)(e.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(0,0);
+            });
+          }
+        });
+        radius += 8;
+      }
+    });
+    this.scene.time.delayedCall(maxRadius/8*20 + 200, () => { timer.remove(); g.destroy(); });
+  }
+
   checkProjectileHits(): void {
     for (const proj of this.projectiles) {
       if (!proj.sprite.active) continue;
       const isAoe = proj.sprite.getData('isAoe');
       const aoeRadius = proj.sprite.getData('aoeRadius') || 0;
+      const isExplosive = proj.sprite.getData('isExplosive');
+      const explodeRadius = proj.sprite.getData('explodeRadius') || 55;
 
       for (const e of this.enemies) {
         if (!e.sprite.active) continue;
@@ -301,6 +422,24 @@ export class WeaponSystem {
             proj.destroy();
             break;
           }
+          if (isExplosive) {
+            // Explosive bolt: AOE explosion on impact
+            const ex = proj.sprite.x, ey = proj.sprite.y;
+            const g = this.scene.add.graphics().setDepth(9);
+            g.fillStyle(0xFF6600, 0.5); g.fillCircle(ex, ey, explodeRadius);
+            g.lineStyle(3, 0xFF2200, 0.8); g.strokeCircle(ex, ey, explodeRadius);
+            this.scene.tweens.add({ targets: g, alpha: 0, duration: 300, onComplete: () => g.destroy() });
+            this.enemies.forEach(other => {
+              if (!other.sprite.active) return;
+              const d2 = Phaser.Math.Distance.Between(ex, ey, other.sprite.x, other.sprite.y);
+              if (d2 < explodeRadius) {
+                const dead2 = this.applyDamageWithLifesteal(other, proj.damage);
+                if (dead2) this.scene.events.emit('enemy-died', other);
+              }
+            });
+            proj.destroy();
+            break;
+          }
           if (destroyed) break;
         }
       }
@@ -309,17 +448,15 @@ export class WeaponSystem {
 
   // Public method for archer rain special
   fireArrow(px: number, py: number, tx: number, ty: number, isPiercing: boolean = false): void {
-    const dx = tx - px;
-    const dy = ty - py;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < 0.1) return;
-    const speed = 320;
-    const damage = Math.floor(WEAPON_DAMAGE[WEAPON_TYPES.ENCHANTED_CROSSBOW] * this.player.stats.damage * 1.2);
-    const pierce = isPiercing ? 2 : 1;
-    const proj = new Projectile(this.scene, px, py, 'arrow',
-      (dx / dist) * speed, (dy / dist) * speed, damage, 2000, pierce);
+    const dx = tx - px, dy = ty - py;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 1) return;
+    const speed = 350;
+    const pierce = isPiercing ? 3 : 1;
+    const proj = new Projectile(this.scene, px, py, 'arrow', (dx/dist)*speed, (dy/dist)*speed,
+      Math.floor(25 * this.player.stats.damage), 2500, pierce);
+    proj.sprite.setRotation(Math.atan2(dy, dx));
     this.projectiles.push(proj);
-    this.scene.events.emit('projectile-created', proj);
   }
 
   fireSalvo(px: number, py: number): void {

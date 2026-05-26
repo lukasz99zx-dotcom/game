@@ -47,6 +47,13 @@ export class Player {
     damageReduction: 0,
     hpRegen: 0,      // HP per second
     lifesteal: 0,    // fraction of damage healed
+    critChance: 0,
+    overkill: 0,       // 1 if enabled
+    execute: 0,        // threshold (fraction of maxHP)
+    thorns: 0,         // reflect fraction
+    secondWind: 0,     // heal fraction (0 = disabled, >0 = fraction of maxHP to heal)
+    secondWindUsed: false, // reset on new wave
+    xpBonus: 0,        // XP gain multiplier bonus
   };
   specialCooldown: number;
   specialTimer: number = 0;
@@ -155,6 +162,16 @@ export class Player {
       duration: 100, repeat: 4, yoyo: true,
       onComplete: () => { if (this.hp > 0) this.sprite.setAlpha(1); },
     });
+    // Second Wind
+    if (this.stats.secondWind > 0 && !this.stats.secondWindUsed && this.hp < this.maxHp * 0.2 && this.hp > 0) {
+      this.stats.secondWindUsed = true;
+      this.heal(Math.floor(this.maxHp * this.stats.secondWind));
+      this.scene.events.emit('second-wind-triggered');
+    }
+    // Thorns (emit event for GameScene to handle)
+    if (this.stats.thorns > 0 && amount > 0) {
+      this.scene.events.emit('thorns-reflect', this.sprite.x, this.sprite.y, Math.floor(amount * this.stats.thorns));
+    }
     return this.hp <= 0;
   }
 
@@ -163,7 +180,8 @@ export class Player {
   }
 
   addXp(amount: number): number {
-    this.xp += amount;
+    const bonus = Math.floor(amount * this.stats.xpBonus);
+    this.xp += amount + bonus;
     return this.xp;
   }
 
@@ -189,6 +207,12 @@ export class Player {
       case 'damageReduction': this.stats.damageReduction = Math.min(0.75, this.stats.damageReduction + value); break;
       case 'hpRegen': this.stats.hpRegen += value; break;
       case 'lifesteal': this.stats.lifesteal = Math.min(0.5, this.stats.lifesteal + value); break;
+      case 'critChance': this.stats.critChance = Math.min(0.7, this.stats.critChance + value); break;
+      case 'overkill': this.stats.overkill = 1; break;
+      case 'execute': this.stats.execute = Math.max(this.stats.execute, value); break;
+      case 'thorns': this.stats.thorns = Math.min(0.6, this.stats.thorns + value); break;
+      case 'secondWind': this.stats.secondWind = Math.max(this.stats.secondWind, value); this.stats.secondWindUsed = false; break;
+      case 'xpBonus': this.stats.xpBonus += value; break;
     }
   }
 

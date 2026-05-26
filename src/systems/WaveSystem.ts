@@ -30,8 +30,8 @@ function buildWaveConfig(wave: number): WaveConfig {
     pool.push({ type: ENEMY_TYPES.NECROMANCER, weight: 1 });
   }
 
-  // Faster spawn rate scaling - no totalEnemies cap
-  const spawnInterval = Math.max(400, 1200 - wave * 40);
+  // Aggressive spawn scaling
+  const spawnInterval = Math.max(150, 900 - wave * 35);  // down to 150ms at wave 21+
 
   return {
     enemies: pool.map(p => ({ ...p, count: 0 })),
@@ -90,22 +90,21 @@ export class WaveSystem {
 
   update(dt: number): void {
     if (!this.isActive) return;
-
     this.waveTimer -= dt;
     this.spawnTimer -= dt;
 
-    // Continuous spawning - spawn enemies all wave long
     if (this.spawnTimer <= 0) {
-      // Spawn 1-3 enemies per tick depending on wave progression within wave
-      const waveProgress = 1 - (this.waveTimer / WAVE_DURATION); // 0 to 1
-      const batchSize = Math.floor(1 + waveProgress * 2); // 1 at start, up to 3 near end
-      for (let i = 0; i < batchSize; i++) {
+      this.spawnTimer = this.config.spawnInterval;
+      // Batch size: grows dramatically over wave time AND over wave number
+      const waveProgress = 1 - this.waveTimer / WAVE_DURATION; // 0→1
+      const baseBatch = Math.min(12, 1 + Math.floor(this.currentWave / 2));
+      const batch = Math.ceil(baseBatch * (0.4 + waveProgress * 1.6)); // 40% → 200% of base
+      for (let i = 0; i < batch; i++) {
         this.spawnEnemy();
       }
-      this.spawnTimer = this.config.spawnInterval;
     }
 
-    // Spawn boss mid-wave
+    // Boss at 50% wave
     const bossType = getBossType(this.currentWave);
     if (bossType && !this.bossSpawned && this.waveTimer < WAVE_DURATION * 0.5) {
       this.bossSpawned = true;
@@ -129,23 +128,15 @@ export class WaveSystem {
   }
 
   getSpawnPosition(): [number, number] {
-    const cam = this.scene.cameras.main;
-    const margin = 80;
+    const margin = 30;
     const side = Math.floor(Math.random() * 4);
-    const cx = cam.scrollX + cam.width / 2;
-    const cy = cam.scrollY + cam.height / 2;
-    const halfW = cam.width / 2 + margin;
-    const halfH = cam.height / 2 + margin;
-
     let x = 0, y = 0;
     switch (side) {
-      case 0: x = cx + (Math.random() - 0.5) * cam.width; y = cy - halfH; break;
-      case 1: x = cx + (Math.random() - 0.5) * cam.width; y = cy + halfH; break;
-      case 2: x = cx - halfW; y = cy + (Math.random() - 0.5) * cam.height; break;
-      case 3: x = cx + halfW; y = cy + (Math.random() - 0.5) * cam.height; break;
+      case 0: x = margin + Math.random() * (this.worldWidth - 2*margin); y = margin; break;
+      case 1: x = margin + Math.random() * (this.worldWidth - 2*margin); y = this.worldHeight - margin; break;
+      case 2: x = margin; y = margin + Math.random() * (this.worldHeight - 2*margin); break;
+      case 3: x = this.worldWidth - margin; y = margin + Math.random() * (this.worldHeight - 2*margin); break;
     }
-    x = Phaser.Math.Clamp(x, margin, this.worldWidth - margin);
-    y = Phaser.Math.Clamp(y, margin, this.worldHeight - margin);
     return [x, y];
   }
 
