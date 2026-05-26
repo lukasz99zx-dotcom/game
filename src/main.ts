@@ -6,6 +6,7 @@ import { HeroSelectScene } from './scenes/HeroSelectScene';
 import { GameScene } from './scenes/GameScene';
 import { LevelUpScene } from './scenes/LevelUpScene';
 import { GameOverScene } from './scenes/GameOverScene';
+import { PauseMenuScene } from './scenes/PauseMenuScene';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -19,7 +20,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [BootScene, MenuScene, HeroSelectScene, GameScene, LevelUpScene, GameOverScene],
+  scene: [BootScene, MenuScene, HeroSelectScene, GameScene, LevelUpScene, GameOverScene, PauseMenuScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

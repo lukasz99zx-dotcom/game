@@ -10,21 +10,27 @@ import { WeaponSystem } from '../systems/WeaponSystem';
 import { HUD } from '../ui/HUD';
 import { UpgradeOption } from '../types';
 import { EnemyType } from '../constants';
+import { showDamageNumber } from '../utils/damage';
 
 const UPGRADE_POOL: UpgradeOption[] = [
-  { id: 'w_sword',     name: 'Lightning Sword',    description: 'Circular sword attack. Hits all nearby enemies.',  type: 'weapon', weaponType: WEAPON_TYPES.LIGHTNING_SWORD },
-  { id: 'w_bow',       name: 'Enchanted Crossbow',  description: 'Piercing arrow. Hits up to 3 enemies in a line.', type: 'weapon', weaponType: WEAPON_TYPES.ENCHANTED_CROSSBOW },
-  { id: 'w_fire',      name: 'Fireball',            description: 'AOE explosion on impact.',                        type: 'weapon', weaponType: WEAPON_TYPES.FIREBALL },
-  { id: 'w_cross',     name: 'Holy Cross',          description: 'Orbiting cross hits nearby enemies.',             type: 'weapon', weaponType: WEAPON_TYPES.HOLY_CROSS },
-  { id: 'w_frost',     name: 'Frost Aura',          description: 'Slows all enemies in range by 50%.',              type: 'weapon', weaponType: WEAPON_TYPES.FROST_AURA },
-  { id: 'w_chain',     name: 'Chain Lightning',     description: 'Jumps between 4 enemies.',                       type: 'weapon', weaponType: WEAPON_TYPES.CHAIN_LIGHTNING },
-  { id: 's_hp',        name: '+40 Max HP',          description: 'Increases maximum health by 40.',                 type: 'stat', statKey: 'maxHp', statValue: 40 },
-  { id: 's_heal',      name: 'Healing Potion',      description: 'Restore 50 HP immediately.',                     type: 'stat', statKey: 'healHp', statValue: 50 },
-  { id: 's_speed',     name: 'Swift Boots',         description: 'Increase movement speed by 20.',                  type: 'stat', statKey: 'speed', statValue: 20 },
-  { id: 's_dmg',       name: 'Sharp Blade',         description: 'Increase all damage by 15%.',                    type: 'stat', statKey: 'damage', statValue: 0.15 },
-  { id: 's_atkspd',    name: 'Combat Training',     description: 'Increase attack speed by 20%.',                  type: 'stat', statKey: 'attackSpeed', statValue: 0.20 },
-  { id: 's_magnet',    name: 'Gold Magnet',         description: 'Increase pickup range by 30.',                   type: 'stat', statKey: 'pickupRange', statValue: 30 },
-  { id: 's_armor',     name: 'Iron Skin',           description: 'Reduce incoming damage by 10%.',                 type: 'stat', statKey: 'damageReduction', statValue: 0.10 },
+  { id: 'w_sword',      name: 'Lightning Sword',    description: 'Circular sword attack. Hits all nearby enemies.',  type: 'weapon', weaponType: WEAPON_TYPES.LIGHTNING_SWORD },
+  { id: 'w_bow',        name: 'Enchanted Crossbow',  description: 'Piercing arrow. Hits up to 3 enemies in a line.', type: 'weapon', weaponType: WEAPON_TYPES.ENCHANTED_CROSSBOW },
+  { id: 'w_fire',       name: 'Fireball',            description: 'AOE explosion on impact.',                        type: 'weapon', weaponType: WEAPON_TYPES.FIREBALL },
+  { id: 'w_cross',      name: 'Holy Cross',          description: 'Orbiting cross hits nearby enemies.',             type: 'weapon', weaponType: WEAPON_TYPES.HOLY_CROSS },
+  { id: 'w_frost',      name: 'Frost Aura',          description: 'Slows all enemies in range by 50%.',              type: 'weapon', weaponType: WEAPON_TYPES.FROST_AURA },
+  { id: 'w_chain',      name: 'Chain Lightning',     description: 'Jumps between 4 enemies.',                       type: 'weapon', weaponType: WEAPON_TYPES.CHAIN_LIGHTNING },
+  { id: 's_hp',         name: '+40 Max HP',          description: 'Increases maximum health by 40.',                 type: 'stat', statKey: 'maxHp', statValue: 40 },
+  { id: 's_heal',       name: 'Healing Potion',      description: 'Restore 50 HP immediately.',                     type: 'stat', statKey: 'healHp', statValue: 50 },
+  { id: 's_speed',      name: 'Swift Boots',         description: 'Increase movement speed by 20.',                  type: 'stat', statKey: 'speed', statValue: 20 },
+  { id: 's_dmg',        name: 'Sharp Blade',         description: 'Increase all damage by 15%.',                    type: 'stat', statKey: 'damage', statValue: 0.15 },
+  { id: 's_atkspd',     name: 'Combat Training',     description: 'Increase attack speed by 20%.',                  type: 'stat', statKey: 'attackSpeed', statValue: 0.20 },
+  { id: 's_magnet',     name: 'Gold Magnet',         description: 'Increase pickup range by 30.',                   type: 'stat', statKey: 'pickupRange', statValue: 30 },
+  { id: 's_armor',      name: 'Iron Skin',           description: 'Reduce incoming damage by 10%.',                 type: 'stat', statKey: 'damageReduction', statValue: 0.10 },
+  { id: 's_regen',      name: 'Regeneration',        description: 'Regenerate 3 HP per second.',                    type: 'stat', statKey: 'hpRegen', statValue: 3 },
+  { id: 's_regen2',     name: 'Vitality',            description: 'Regenerate 6 HP per second.',                    type: 'stat', statKey: 'hpRegen', statValue: 6 },
+  { id: 's_lifesteal',  name: 'Vampiric Touch',      description: 'Steal 8% of damage dealt as HP.',                type: 'stat', statKey: 'lifesteal', statValue: 0.08 },
+  { id: 's_lifesteal2', name: 'Blood Pact',          description: 'Steal 15% of damage dealt as HP.',               type: 'stat', statKey: 'lifesteal', statValue: 0.15 },
+  { id: 's_fullheal',   name: 'Divine Potion',       description: 'Fully restore all HP.',                          type: 'stat', statKey: 'healHp', statValue: 999 },
 ];
 
 export class GameScene extends Phaser.Scene {
@@ -44,7 +50,6 @@ export class GameScene extends Phaser.Scene {
   private joystickThumbGfx!: Phaser.GameObjects.Graphics;
 
   // State
-  private isPaused: boolean = false;
   private isGameOver: boolean = false;
   private heroClass: HeroClass = HERO_CLASSES.KNIGHT;
   private startTime: number = 0;
@@ -63,7 +68,6 @@ export class GameScene extends Phaser.Scene {
     this.heroClass = data?.heroClass ?? HERO_CLASSES.KNIGHT;
     this.enemies = [];
     this.bossEnemy = null;
-    this.isPaused = false;
     this.isGameOver = false;
     this.enemiesKilled = 0;
   }
@@ -79,6 +83,7 @@ export class GameScene extends Phaser.Scene {
     this.setupCamera();
     this.createSystems();
     this.setupEvents();
+    this.createPauseButton();
 
     // Start first wave after a short delay
     this.time.delayedCall(1500, () => {
@@ -87,7 +92,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    if (this.isGameOver || this.isPaused) return;
+    if (this.isGameOver) return;
 
     this.player.update(delta);
     this.movePlayer(delta);
@@ -179,7 +184,6 @@ export class GameScene extends Phaser.Scene {
     const orb = this.physics.add.sprite(x, y, 'xp_crystal').setDepth(3);
     orb.setData('value', amount);
     (orb.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
-    // Small random scatter
     (orb.body as Phaser.Physics.Arcade.Body).setVelocity(
       (Math.random() - 0.5) * 80, (Math.random() - 0.5) * 80
     );
@@ -280,6 +284,36 @@ export class GameScene extends Phaser.Scene {
     this.hud = new HUD(this, this.player);
   }
 
+  // ── Pause Button ───────────────────────────────────────────────────────────
+
+  private createPauseButton(): void {
+    const btn = this.add.graphics().setScrollFactor(0).setDepth(200);
+    const x = GAME_WIDTH - 30, y = 30;
+
+    const draw = (hover: boolean) => {
+      btn.clear();
+      btn.fillStyle(hover ? 0x333300 : 0x000000, 0.7);
+      btn.fillRoundedRect(x - 22, y - 18, 44, 36, 5);
+      btn.lineStyle(2, COLORS.GOLD);
+      btn.strokeRoundedRect(x - 22, y - 18, 44, 36, 5);
+      // Pause bars
+      btn.fillStyle(COLORS.GOLD);
+      btn.fillRect(x - 8, y - 10, 6, 20);
+      btn.fillRect(x + 2, y - 10, 6, 20);
+    };
+    draw(false);
+
+    const zone = this.add.zone(x, y, 44, 36).setScrollFactor(0).setDepth(201).setInteractive();
+    zone.on('pointerover', () => draw(true));
+    zone.on('pointerout', () => draw(false));
+    zone.on('pointerdown', () => this.openPauseMenu());
+  }
+
+  private openPauseMenu(): void {
+    this.scene.pause();
+    this.scene.launch(SCENE_KEYS.PAUSE);
+  }
+
   // ── Events ─────────────────────────────────────────────────────────────────
 
   private setupEvents(): void {
@@ -300,9 +334,10 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.events.on('boss-incoming', () => {
-      this.hud.announce('⚠ BOSS INCOMING! ⚠', 2500);
+      this.hud.announce('BOSS INCOMING!', 2500);
     });
 
+    // Legacy events (kept for compatibility)
     this.events.on('archer-salvo', (x: number, y: number) => {
       this.weaponSystem.fireSalvo(x, y);
     });
@@ -313,6 +348,73 @@ export class GameScene extends Phaser.Scene {
 
     this.events.on('rogue-smoke', (x: number, y: number) => {
       this.weaponSystem.fireSmokeBomb(x, y);
+    });
+
+    // New class specials
+    this.events.on('knight-warcry', (x: number, y: number) => {
+      // Stun all enemies within 180px for 3s
+      const stunRadius = 180;
+      this.enemies.forEach(e => {
+        if (!e.sprite.active) return;
+        const dist = Phaser.Math.Distance.Between(x, y, e.sprite.x, e.sprite.y);
+        if (dist <= stunRadius) e.stun(3000);
+      });
+      // Visual: golden shockwave
+      this.createShockwave(x, y, stunRadius, COLORS.GOLD);
+    });
+
+    this.events.on('archer-rain', (x: number, y: number) => {
+      // 12 arrows in circle
+      for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2;
+        const tx = x + Math.cos(angle) * 400;
+        const ty = y + Math.sin(angle) * 400;
+        this.weaponSystem.fireArrow(x, y, tx, ty, true);
+      }
+    });
+
+    this.events.on('mage-timefreeze', () => {
+      // Slow ALL enemies 90% for 5s
+      this.enemies.forEach(e => {
+        if (e.sprite.active) e.freeze(0.9, 5000);
+      });
+      // Visual: screen flash blue
+      const flash = this.add.graphics().setScrollFactor(0).setDepth(300);
+      flash.fillStyle(0x0044FF, 0.3);
+      flash.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+      this.tweens.add({ targets: flash, alpha: 0, duration: 600, onComplete: () => flash.destroy() });
+    });
+
+    this.events.on('rogue-shadowstep', (px: number, py: number) => {
+      // Find nearest enemy within 400px
+      let nearest: Enemy | null = null;
+      let minDist = 400;
+      for (const e of this.enemies) {
+        if (!e.sprite.active) continue;
+        const d = Phaser.Math.Distance.Between(px, py, e.sprite.x, e.sprite.y);
+        if (d < minDist) { minDist = d; nearest = e; }
+      }
+      if (!nearest) return;
+
+      // Leave shadow at origin
+      const shadow = this.add.sprite(px, py, this.player.heroClass + '_0')
+        .setAlpha(0.4).setTint(0x000000).setDepth(10);
+      this.tweens.add({ targets: shadow, alpha: 0, duration: 500, onComplete: () => shadow.destroy() });
+
+      // Teleport player behind enemy
+      const ex = nearest.sprite.x, ey = nearest.sprite.y;
+      const angle = Math.atan2(ey - py, ex - px);
+      this.player.sprite.setPosition(
+        ex - Math.cos(angle) * 30,
+        ey - Math.sin(angle) * 30
+      );
+
+      // 5x damage backstab
+      const backstabDamage = Math.floor(this.player.stats.damage * 80 * 5);
+      const dead = nearest.takeDamage(backstabDamage);
+      showDamageNumber(this, nearest.sprite.x, nearest.sprite.y, backstabDamage, true);
+      nearest.stun(2000);
+      if (dead) this.events.emit('enemy-died', nearest);
     });
 
     this.events.on('goblin-shoot', (fx: number, fy: number, tx: number, ty: number) => {
@@ -344,7 +446,6 @@ export class GameScene extends Phaser.Scene {
           proj.setData('damage', 50);
           proj.setData('isEnemyProj', true);
           this.time.delayedCall(2000, () => { if (proj.active) proj.destroy(); });
-          // Check player hit each frame via overlap
           this.physics.add.overlap(this.player.sprite, proj, () => {
             if (!proj.active) return;
             const dead = this.player.takeDamage(50);
@@ -356,7 +457,6 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.events.on('necro-resurrect', (x: number, y: number) => {
-      // Spawn 2 skeletons near necromancer
       for (let i = 0; i < 2; i++) {
         const angle = Math.random() * Math.PI * 2;
         const dist = 40 + Math.random() * 40;
@@ -392,6 +492,25 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  // ── Shockwave Visual ───────────────────────────────────────────────────────
+
+  private createShockwave(x: number, y: number, maxRadius: number, color: number): void {
+    const g = this.add.graphics().setDepth(50);
+    let radius = 10;
+    const timer = this.time.addEvent({
+      delay: 16,
+      repeat: Math.floor(maxRadius / 8),
+      callback: () => {
+        g.clear();
+        g.lineStyle(3, color, 1 - radius / maxRadius);
+        g.strokeCircle(x, y, radius);
+        radius += 8;
+      },
+      callbackScope: this,
+    });
+    this.time.delayedCall(maxRadius / 8 * 16 + 100, () => { timer.remove(); g.destroy(); });
+  }
+
   // ── Enemy Spawning ──────────────────────────────────────────────────────────
 
   private spawnEnemy(type: EnemyType, x: number, y: number, _isBoss: boolean = false): void {
@@ -421,8 +540,10 @@ export class GameScene extends Phaser.Scene {
         this.joystickVec.x * speed,
         this.joystickVec.y * speed,
       );
+      this.player.setMoving(true);
     } else {
       this.player.sprite.setVelocity(0, 0);
+      this.player.setMoving(false);
     }
   }
 
@@ -533,13 +654,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   private triggerLevelUp(): void {
-    this.isPaused = true;
+    // Pause the game scene physics/updates
+    this.scene.pause();
     const options = this.buildUpgradeOptions();
     this.scene.launch(SCENE_KEYS.LEVEL_UP, {
       options,
       onChoose: (option: UpgradeOption) => {
         this.applyUpgrade(option);
-        this.isPaused = false;
         this.hud.announce(`${option.name} acquired!`, 1500);
       },
     });
@@ -548,7 +669,6 @@ export class GameScene extends Phaser.Scene {
   private buildUpgradeOptions(): UpgradeOption[] {
     const available = UPGRADE_POOL.filter(opt => {
       if (opt.type === 'weapon') {
-        // Only show weapons not already owned, or if at max weapons, show only stat upgrades
         if (this.player.weapons.length >= MAX_WEAPONS) return false;
         return !this.player.weapons.includes(opt.weaponType!);
       }
@@ -589,7 +709,7 @@ export class GameScene extends Phaser.Scene {
     }).explode(8);
 
     if (enemy.isBoss) {
-      this.hud.announce('🏆 BOSS DEFEATED!', 3000);
+      this.hud.announce('BOSS DEFEATED!', 3000);
       this.bossEnemy = null;
     }
 

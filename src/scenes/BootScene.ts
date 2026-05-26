@@ -1,5 +1,23 @@
 import Phaser from 'phaser';
 import { SCENE_KEYS, COLORS } from '../constants';
+import {
+  renderPixelArt,
+  P_KNIGHT, KNIGHT_FRAME0, KNIGHT_FRAME1,
+  P_ARCHER, ARCHER_FRAME0, ARCHER_FRAME1,
+  P_MAGE, MAGE_FRAME0, MAGE_FRAME1,
+  P_ROGUE, ROGUE_FRAME0, ROGUE_FRAME1,
+  P_WOLF, WOLF_FRAME0, WOLF_FRAME1,
+  P_SKELETON, SKELETON_FRAME0, SKELETON_FRAME1,
+  P_ZOMBIE, ZOMBIE_FRAME0, ZOMBIE_FRAME1,
+  P_GOBLIN, GOBLIN_FRAME0, GOBLIN_FRAME1,
+  P_NECROMANCER, NECROMANCER_FRAME0, NECROMANCER_FRAME1,
+  P_DEMON, DEMON_FRAME0, DEMON_FRAME1,
+  P_VAMPIRE, VAMPIRE_FRAME0, VAMPIRE_FRAME1,
+  P_BOSS_OGRE, OGRE_FRAME0, OGRE_FRAME1,
+  P_BOSS_BLACK_KNIGHT, BLACK_KNIGHT_FRAME0, BLACK_KNIGHT_FRAME1,
+  P_BOSS_ARCLICH, ARCLICH_FRAME0, ARCLICH_FRAME1,
+  P_BOSS_DRAGON, DRAGON_FRAME0, DRAGON_FRAME1,
+} from '../utils/PixelArt';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -11,300 +29,128 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    // Generate all procedural textures
     this.generateTextures();
-    // Go straight to menu
+    this.registerAnimations();
     this.scene.start(SCENE_KEYS.MENU);
   }
 
   private generateTextures(): void {
-    this.generatePlayerTextures();
+    this.generateHeroTextures();
     this.generateEnemyTextures();
+    this.generateBossTextures();
     this.generateProjectileTextures();
     this.generatePickupTextures();
     this.generateUITextures();
+    this.generateParticleTextures();
   }
 
-  private generatePlayerTextures(): void {
-    // Knight - gray rectangle body with cross
-    const knight = this.make.graphics({ x: 0, y: 0 } as any);
-    knight.fillStyle(COLORS.STONE_GRAY);
-    knight.fillRect(4, 4, 24, 28);
-    knight.fillStyle(COLORS.DARK_STONE);
-    knight.fillRect(6, 6, 20, 4); // helmet
-    knight.fillStyle(COLORS.SILVER);
-    knight.fillRect(10, 14, 12, 3); // cross horizontal
-    knight.fillRect(14, 10, 4, 14); // cross vertical
-    knight.fillStyle(COLORS.LIGHT_GRAY);
-    knight.fillRect(4, 28, 10, 4); // left leg
-    knight.fillRect(18, 28, 10, 4); // right leg
-    knight.generateTexture('knight', 32, 32);
-    knight.destroy();
+  // ── Hero Textures ────────────────────────────────────────────────────────
 
-    // Archer - brown body with bow
-    const archer = this.make.graphics({ x: 0, y: 0 } as any);
-    archer.fillStyle(COLORS.BROWN);
-    archer.fillRect(8, 6, 16, 22);
-    archer.fillStyle(COLORS.DARK_BROWN);
-    archer.fillRect(8, 6, 16, 4); // hood
-    archer.fillStyle(COLORS.GOLD);
-    // bow shape
-    archer.lineStyle(2, COLORS.DARK_BROWN);
-    archer.strokeCircle(4, 16, 10);
-    archer.fillStyle(COLORS.BROWN);
-    archer.fillRect(2, 14, 4, 4);
-    archer.fillStyle(COLORS.LIGHT_GRAY);
-    archer.fillRect(8, 28, 6, 4);
-    archer.fillRect(18, 28, 6, 4);
-    archer.generateTexture('archer', 32, 32);
-    archer.destroy();
+  private generateHeroTextures(): void {
+    this.makePixelTexture('knight_0', KNIGHT_FRAME0, P_KNIGHT, 2, 32, 32);
+    this.makePixelTexture('knight_1', KNIGHT_FRAME1, P_KNIGHT, 2, 32, 32);
+    // Also generate the plain 'knight' key for backward compat (HeroSelectScene)
+    this.makePixelTexture('knight', KNIGHT_FRAME0, P_KNIGHT, 2, 32, 32);
 
-    // Mage - purple robe with star
-    const mage = this.make.graphics({ x: 0, y: 0 } as any);
-    mage.fillStyle(COLORS.PURPLE);
-    mage.fillRect(8, 8, 16, 22);
-    mage.fillStyle(COLORS.DARK_PURPLE);
-    mage.fillTriangle(8, 8, 24, 8, 16, 0); // hat
-    mage.fillStyle(COLORS.GOLD);
-    // star on chest
-    mage.fillTriangle(12, 14, 20, 14, 16, 10);
-    mage.fillTriangle(12, 17, 20, 17, 16, 21);
-    mage.fillStyle(0xDDA0DD);
-    mage.fillRect(9, 28, 5, 4);
-    mage.fillRect(18, 28, 5, 4);
-    mage.generateTexture('mage', 32, 32);
-    mage.destroy();
+    this.makePixelTexture('archer_0', ARCHER_FRAME0, P_ARCHER, 2, 32, 32);
+    this.makePixelTexture('archer_1', ARCHER_FRAME1, P_ARCHER, 2, 32, 32);
+    this.makePixelTexture('archer', ARCHER_FRAME0, P_ARCHER, 2, 32, 32);
 
-    // Rogue - dark body with hood
-    const rogue = this.make.graphics({ x: 0, y: 0 } as any);
-    rogue.fillStyle(0x222222);
-    rogue.fillRect(8, 8, 16, 22);
-    rogue.fillStyle(0x111111);
-    rogue.fillTriangle(6, 8, 26, 8, 16, 0); // hood
-    rogue.fillRect(6, 8, 20, 6);
-    rogue.fillStyle(COLORS.BLOOD_RED);
-    // eye
-    rogue.fillRect(11, 10, 3, 2);
-    rogue.fillRect(18, 10, 3, 2);
-    rogue.fillStyle(0x333333);
-    rogue.fillRect(8, 28, 6, 4);
-    rogue.fillRect(18, 28, 6, 4);
-    rogue.generateTexture('rogue', 32, 32);
-    rogue.destroy();
+    this.makePixelTexture('mage_0', MAGE_FRAME0, P_MAGE, 2, 32, 32);
+    this.makePixelTexture('mage_1', MAGE_FRAME1, P_MAGE, 2, 32, 32);
+    this.makePixelTexture('mage', MAGE_FRAME0, P_MAGE, 2, 32, 32);
+
+    this.makePixelTexture('rogue_0', ROGUE_FRAME0, P_ROGUE, 2, 32, 32);
+    this.makePixelTexture('rogue_1', ROGUE_FRAME1, P_ROGUE, 2, 32, 32);
+    this.makePixelTexture('rogue', ROGUE_FRAME0, P_ROGUE, 2, 32, 32);
   }
+
+  // ── Enemy Textures ────────────────────────────────────────────────────────
 
   private generateEnemyTextures(): void {
-    // Wolf - brown quadruped
-    const wolf = this.make.graphics({ x: 0, y: 0 } as any);
-    wolf.fillStyle(0x8B7355);
-    wolf.fillRect(4, 12, 24, 14); // body
-    wolf.fillRect(20, 6, 10, 10); // head
-    wolf.fillStyle(0x6B5335);
-    wolf.fillRect(6, 24, 4, 6); // back legs
-    wolf.fillRect(14, 24, 4, 6);
-    wolf.fillRect(20, 24, 4, 6);
-    wolf.fillStyle(COLORS.RED);
-    wolf.fillRect(27, 10, 3, 2); // eye
-    wolf.generateTexture('wolf', 32, 32);
-    wolf.destroy();
+    this.makePixelTexture('wolf_0', WOLF_FRAME0, P_WOLF, 2, 32, 32);
+    this.makePixelTexture('wolf_1', WOLF_FRAME1, P_WOLF, 2, 32, 32);
+    this.makePixelTexture('wolf', WOLF_FRAME0, P_WOLF, 2, 32, 32);
 
-    // Skeleton - white stick figure
-    const skeleton = this.make.graphics({ x: 0, y: 0 } as any);
-    skeleton.fillStyle(0xF5F5DC); // bone white
-    skeleton.fillCircle(16, 6, 6); // skull
-    skeleton.fillRect(13, 11, 6, 12); // spine
-    skeleton.fillRect(6, 13, 20, 3); // ribs
-    skeleton.fillRect(7, 23, 4, 8); // left leg
-    skeleton.fillRect(21, 23, 4, 8); // right leg
-    skeleton.fillRect(3, 13, 6, 3); // left arm
-    skeleton.fillRect(23, 13, 6, 3); // right arm
-    skeleton.fillStyle(COLORS.RED);
-    skeleton.fillRect(13, 5, 2, 2); // eye left
-    skeleton.fillRect(17, 5, 2, 2); // eye right
-    skeleton.generateTexture('skeleton', 32, 32);
-    skeleton.destroy();
+    this.makePixelTexture('skeleton_0', SKELETON_FRAME0, P_SKELETON, 2, 32, 32);
+    this.makePixelTexture('skeleton_1', SKELETON_FRAME1, P_SKELETON, 2, 32, 32);
+    this.makePixelTexture('skeleton', SKELETON_FRAME0, P_SKELETON, 2, 32, 32);
 
-    // Zombie - green bloated humanoid
-    const zombie = this.make.graphics({ x: 0, y: 0 } as any);
-    zombie.fillStyle(0x5A8A5A);
-    zombie.fillCircle(16, 8, 7); // head
-    zombie.fillRect(8, 14, 16, 14); // torso (bloated)
-    zombie.fillStyle(0x3A6A3A);
-    zombie.fillRect(4, 14, 6, 12); // left arm
-    zombie.fillRect(22, 14, 6, 12); // right arm
-    zombie.fillRect(9, 27, 5, 6); // left leg
-    zombie.fillRect(18, 27, 5, 6); // right leg
-    zombie.fillStyle(COLORS.RED);
-    zombie.fillRect(13, 6, 2, 2);
-    zombie.fillRect(17, 6, 2, 2);
-    zombie.generateTexture('zombie', 32, 32);
-    zombie.destroy();
+    this.makePixelTexture('zombie_0', ZOMBIE_FRAME0, P_ZOMBIE, 2, 32, 32);
+    this.makePixelTexture('zombie_1', ZOMBIE_FRAME1, P_ZOMBIE, 2, 32, 32);
+    this.makePixelTexture('zombie', ZOMBIE_FRAME0, P_ZOMBIE, 2, 32, 32);
 
-    // Goblin - small green figure
-    const goblin = this.make.graphics({ x: 0, y: 0 } as any);
-    goblin.fillStyle(0x3CB371);
-    goblin.fillCircle(16, 9, 8); // large head
-    goblin.fillRect(10, 16, 12, 10); // small body
-    goblin.fillStyle(0x2E8B57);
-    goblin.fillRect(6, 16, 6, 8); // left arm
-    goblin.fillRect(20, 16, 6, 8); // right arm
-    goblin.fillRect(10, 26, 4, 6); // left leg
-    goblin.fillRect(18, 26, 4, 6); // right leg
-    goblin.fillStyle(COLORS.YELLOW);
-    goblin.fillRect(12, 7, 3, 3); // eye
-    goblin.fillRect(17, 7, 3, 3);
-    goblin.generateTexture('goblin', 32, 32);
-    goblin.destroy();
+    this.makePixelTexture('goblin_0', GOBLIN_FRAME0, P_GOBLIN, 2, 32, 32);
+    this.makePixelTexture('goblin_1', GOBLIN_FRAME1, P_GOBLIN, 2, 32, 32);
+    this.makePixelTexture('goblin', GOBLIN_FRAME0, P_GOBLIN, 2, 32, 32);
 
-    // Necromancer - dark robed figure
-    const necro = this.make.graphics({ x: 0, y: 0 } as any);
-    necro.fillStyle(0x1A001A);
-    necro.fillRect(8, 8, 16, 24);
-    necro.fillTriangle(8, 8, 24, 8, 16, 0);
-    necro.fillStyle(0x4B0082);
-    necro.fillRect(10, 12, 12, 16);
-    necro.fillStyle(COLORS.CYAN);
-    necro.fillRect(12, 10, 3, 3); // eye
-    necro.fillRect(17, 10, 3, 3);
-    necro.fillStyle(0x9400D3);
-    necro.fillRect(4, 14, 6, 3); // left arm
-    necro.fillRect(22, 14, 6, 3); // right arm
-    necro.generateTexture('necromancer', 32, 32);
-    necro.destroy();
+    this.makePixelTexture('necromancer_0', NECROMANCER_FRAME0, P_NECROMANCER, 2, 32, 32);
+    this.makePixelTexture('necromancer_1', NECROMANCER_FRAME1, P_NECROMANCER, 2, 32, 32);
+    this.makePixelTexture('necromancer', NECROMANCER_FRAME0, P_NECROMANCER, 2, 32, 32);
 
-    // Demon - red menacing figure
-    const demon = this.make.graphics({ x: 0, y: 0 } as any);
-    demon.fillStyle(0xCC2200);
-    demon.fillCircle(16, 8, 7);
-    demon.fillRect(8, 14, 16, 14);
-    demon.fillStyle(0xFF4400);
-    demon.fillTriangle(12, 0, 16, 6, 14, 0); // left horn
-    demon.fillTriangle(20, 0, 16, 6, 18, 0); // right horn
-    demon.fillStyle(0x880000);
-    demon.fillRect(4, 14, 6, 14); // left arm
-    demon.fillRect(22, 14, 6, 14); // right arm
-    demon.fillRect(9, 27, 5, 5); // legs
-    demon.fillRect(18, 27, 5, 5);
-    demon.fillStyle(COLORS.YELLOW);
-    demon.fillRect(13, 6, 3, 3);
-    demon.fillRect(17, 6, 3, 3);
-    demon.generateTexture('demon', 32, 32);
-    demon.destroy();
+    this.makePixelTexture('demon_0', DEMON_FRAME0, P_DEMON, 2, 32, 32);
+    this.makePixelTexture('demon_1', DEMON_FRAME1, P_DEMON, 2, 32, 32);
+    this.makePixelTexture('demon', DEMON_FRAME0, P_DEMON, 2, 32, 32);
 
-    // Vampire - elegant dark figure
-    const vampire = this.make.graphics({ x: 0, y: 0 } as any);
-    vampire.fillStyle(0x2A0A2A);
-    vampire.fillCircle(16, 7, 6);
-    vampire.fillRect(8, 12, 16, 18);
-    vampire.fillStyle(0xCC0066);
-    vampire.fillRect(8, 12, 16, 4); // cape collar
-    vampire.fillStyle(0x4A0A4A);
-    vampire.fillRect(4, 14, 6, 16); // cape left
-    vampire.fillRect(22, 14, 6, 16); // cape right
-    vampire.fillStyle(COLORS.RED);
-    vampire.fillRect(12, 5, 2, 2);
-    vampire.fillRect(18, 5, 2, 2);
-    vampire.fillStyle(0xFFFFFF);
-    vampire.fillRect(14, 10, 4, 2); // fangs
-    vampire.generateTexture('vampire', 32, 32);
-    vampire.destroy();
-
-    // Bosses - larger sprites (64x64)
-    this.generateBossTextures();
+    this.makePixelTexture('vampire_0', VAMPIRE_FRAME0, P_VAMPIRE, 2, 32, 32);
+    this.makePixelTexture('vampire_1', VAMPIRE_FRAME1, P_VAMPIRE, 2, 32, 32);
+    this.makePixelTexture('vampire', VAMPIRE_FRAME0, P_VAMPIRE, 2, 32, 32);
   }
+
+  // ── Boss Textures ─────────────────────────────────────────────────────────
 
   private generateBossTextures(): void {
-    // Ogre Warlord - huge armored brute (64x64)
-    const ogre = this.make.graphics({ x: 0, y: 0 } as any);
-    ogre.fillStyle(0x8B6914);
-    ogre.fillCircle(32, 16, 14); // head
-    ogre.fillRect(8, 28, 48, 32); // massive body
-    ogre.fillStyle(0x6B4E14);
-    ogre.fillRect(2, 28, 14, 28); // left arm
-    ogre.fillRect(48, 28, 14, 28); // right arm
-    ogre.fillRect(10, 56, 14, 10); // left leg
-    ogre.fillRect(40, 56, 14, 10); // right leg
-    ogre.fillStyle(COLORS.STONE_GRAY);
-    ogre.fillRect(10, 28, 44, 8); // armor
-    ogre.fillRect(0, 24, 64, 6); // shoulder pads
-    ogre.fillStyle(COLORS.RED);
-    ogre.fillRect(24, 12, 5, 5); // eye
-    ogre.fillRect(35, 12, 5, 5);
-    ogre.fillStyle(COLORS.GOLD);
-    ogre.fillRect(20, 28, 24, 6); // belt
-    ogre.generateTexture('ogre_warlord', 64, 64);
-    ogre.destroy();
+    // Boss art is 21 rows × 16 cols, rendered at scale=3 → 48×63
+    // We use 64×64 canvas to keep it consistent
+    this.makeBossPixelTexture('ogre_warlord_0', OGRE_FRAME0, P_BOSS_OGRE, 3);
+    this.makeBossPixelTexture('ogre_warlord_1', OGRE_FRAME1, P_BOSS_OGRE, 3);
+    this.makeBossPixelTexture('ogre_warlord', OGRE_FRAME0, P_BOSS_OGRE, 3);
 
-    // Black Knight - armored dark knight (64x64)
-    const blackKnight = this.make.graphics({ x: 0, y: 0 } as any);
-    blackKnight.fillStyle(0x111111);
-    blackKnight.fillRect(16, 0, 32, 10); // helmet top
-    blackKnight.fillRect(12, 8, 40, 16); // helmet
-    blackKnight.fillRect(14, 22, 36, 30); // torso
-    blackKnight.fillStyle(0x333333);
-    blackKnight.fillRect(2, 22, 14, 28); // left arm
-    blackKnight.fillRect(48, 22, 14, 28); // right arm
-    blackKnight.fillRect(14, 50, 14, 14); // left leg
-    blackKnight.fillRect(36, 50, 14, 14); // right leg
-    blackKnight.fillStyle(COLORS.BLOOD_RED);
-    blackKnight.fillRect(20, 12, 6, 4); // visor slit
-    blackKnight.fillRect(38, 12, 6, 4);
-    blackKnight.fillStyle(COLORS.GOLD);
-    blackKnight.fillRect(18, 22, 28, 4); // pauldron
-    blackKnight.fillRect(0, 22, 14, 4);
-    blackKnight.fillRect(50, 22, 14, 4);
-    // sword
-    blackKnight.fillStyle(COLORS.SILVER);
-    blackKnight.fillRect(54, 10, 4, 42);
-    blackKnight.fillRect(46, 26, 20, 4);
-    blackKnight.generateTexture('black_knight', 64, 64);
-    blackKnight.destroy();
+    this.makeBossPixelTexture('black_knight_0', BLACK_KNIGHT_FRAME0, P_BOSS_BLACK_KNIGHT, 3);
+    this.makeBossPixelTexture('black_knight_1', BLACK_KNIGHT_FRAME1, P_BOSS_BLACK_KNIGHT, 3);
+    this.makeBossPixelTexture('black_knight', BLACK_KNIGHT_FRAME0, P_BOSS_BLACK_KNIGHT, 3);
 
-    // Arclich - undead spellcaster (64x64)
-    const arclich = this.make.graphics({ x: 0, y: 0 } as any);
-    arclich.fillStyle(0xF5F5DC);
-    arclich.fillCircle(32, 14, 12); // skull
-    arclich.fillStyle(0x1A001A);
-    arclich.fillRect(12, 24, 40, 32); // robe
-    arclich.fillStyle(0x4B0082);
-    arclich.fillRect(14, 26, 36, 28);
-    arclich.fillStyle(0xF5F5DC);
-    arclich.fillRect(2, 26, 12, 26); // arm bones
-    arclich.fillRect(50, 26, 12, 26);
-    arclich.fillStyle(COLORS.CYAN);
-    arclich.fillRect(26, 10, 5, 5); // eye sockets glowing
-    arclich.fillRect(33, 10, 5, 5);
-    arclich.fillStyle(COLORS.GOLD);
-    arclich.fillTriangle(20, 2, 32, 12, 28, 2); // crown
-    arclich.fillTriangle(32, 12, 44, 2, 36, 2);
-    arclich.fillTriangle(26, 0, 32, 8, 38, 0);
-    arclich.generateTexture('arclich', 64, 64);
-    arclich.destroy();
+    this.makeBossPixelTexture('arclich_0', ARCLICH_FRAME0, P_BOSS_ARCLICH, 3);
+    this.makeBossPixelTexture('arclich_1', ARCLICH_FRAME1, P_BOSS_ARCLICH, 3);
+    this.makeBossPixelTexture('arclich', ARCLICH_FRAME0, P_BOSS_ARCLICH, 3);
 
-    // Chaos Dragon - massive flying beast (64x64)
-    const dragon = this.make.graphics({ x: 0, y: 0 } as any);
-    dragon.fillStyle(0x8B0000);
-    dragon.fillCircle(44, 18, 18); // head
-    dragon.fillRect(8, 22, 48, 28); // body
-    dragon.fillStyle(0xCC0000);
-    dragon.fillTriangle(0, 16, 20, 24, 8, 4); // wing left
-    dragon.fillTriangle(44, 4, 64, 16, 56, 28); // wing right
-    dragon.fillStyle(0xFF4400);
-    dragon.fillTriangle(20, 4, 44, 8, 36, 0); // dorsal spikes
-    dragon.fillTriangle(28, 2, 44, 6, 40, 0);
-    dragon.fillStyle(0x660000);
-    dragon.fillRect(2, 40, 16, 10); // legs
-    dragon.fillRect(46, 40, 16, 10);
-    dragon.fillRect(0, 30, 10, 18); // tail
-    dragon.fillStyle(COLORS.YELLOW);
-    dragon.fillRect(48, 14, 6, 6); // eye
-    dragon.fillStyle(COLORS.ORANGE);
-    dragon.fillRect(56, 20, 8, 4); // fire breath
-    dragon.fillStyle(COLORS.YELLOW);
-    dragon.fillRect(58, 21, 5, 2);
-    dragon.generateTexture('chaos_dragon', 64, 64);
-    dragon.destroy();
+    this.makeBossPixelTexture('chaos_dragon_0', DRAGON_FRAME0, P_BOSS_DRAGON, 3);
+    this.makeBossPixelTexture('chaos_dragon_1', DRAGON_FRAME1, P_BOSS_DRAGON, 3);
+    this.makeBossPixelTexture('chaos_dragon', DRAGON_FRAME0, P_BOSS_DRAGON, 3);
   }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  private makePixelTexture(
+    key: string,
+    rows: string[],
+    palette: Record<string, number | null>,
+    scale: number,
+    w: number,
+    h: number
+  ): void {
+    const g = this.make.graphics({ x: 0, y: 0 } as any);
+    renderPixelArt(g, rows, palette, scale);
+    g.generateTexture(key, w, h);
+    g.destroy();
+  }
+
+  private makeBossPixelTexture(
+    key: string,
+    rows: string[],
+    palette: Record<string, number | null>,
+    scale: number
+  ): void {
+    const cols = rows[0]?.length ?? 16;
+    const w = cols * scale;
+    const h = rows.length * scale;
+    const g = this.make.graphics({ x: 0, y: 0 } as any);
+    renderPixelArt(g, rows, palette, scale);
+    g.generateTexture(key, w, h);
+    g.destroy();
+  }
+
+  // ── Projectile Textures ────────────────────────────────────────────────────
 
   private generateProjectileTextures(): void {
     // Arrow
@@ -399,6 +245,8 @@ export class BootScene extends Phaser.Scene {
     necroSpell.destroy();
   }
 
+  // ── Pickup Textures ────────────────────────────────────────────────────────
+
   private generatePickupTextures(): void {
     // XP crystal - cyan diamond
     const xpCrystal = this.make.graphics({ x: 0, y: 0 } as any);
@@ -421,6 +269,8 @@ export class BootScene extends Phaser.Scene {
     gold.generateTexture('gold_coin', 12, 12);
     gold.destroy();
   }
+
+  // ── UI Textures ────────────────────────────────────────────────────────────
 
   private generateUITextures(): void {
     // Heart for HP
@@ -467,5 +317,63 @@ export class BootScene extends Phaser.Scene {
     particle.fillCircle(4, 4, 4);
     particle.generateTexture('particle', 8, 8);
     particle.destroy();
+  }
+
+  // ── Particle Textures ──────────────────────────────────────────────────────
+
+  private generateParticleTextures(): void {
+    // Blood particle - red circle 6px
+    const blood = this.make.graphics({ x: 0, y: 0 } as any);
+    blood.fillStyle(0xCC0000);
+    blood.fillCircle(3, 3, 3);
+    blood.generateTexture('particle_blood', 6, 6);
+    blood.destroy();
+
+    // XP particle - cyan dot 4px
+    const xpDot = this.make.graphics({ x: 0, y: 0 } as any);
+    xpDot.fillStyle(0x00FFFF);
+    xpDot.fillCircle(2, 2, 2);
+    xpDot.generateTexture('particle_xp', 4, 4);
+    xpDot.destroy();
+  }
+
+  // ── Animation Registration ─────────────────────────────────────────────────
+
+  private registerAnimations(): void {
+    const heroes = ['knight', 'archer', 'mage', 'rogue'];
+    for (const h of heroes) {
+      this.anims.create({
+        key: `${h}_walk`,
+        frames: [{ key: `${h}_0` }, { key: `${h}_1` }],
+        frameRate: 6,
+        repeat: -1,
+      });
+      this.anims.create({
+        key: `${h}_idle`,
+        frames: [{ key: `${h}_0` }],
+        frameRate: 1,
+        repeat: -1,
+      });
+    }
+
+    const enemies = ['wolf', 'skeleton', 'zombie', 'goblin', 'necromancer', 'demon', 'vampire'];
+    for (const e of enemies) {
+      this.anims.create({
+        key: `${e}_walk`,
+        frames: [{ key: `${e}_0` }, { key: `${e}_1` }],
+        frameRate: 5,
+        repeat: -1,
+      });
+    }
+
+    const bosses = ['ogre_warlord', 'black_knight', 'arclich', 'chaos_dragon'];
+    for (const b of bosses) {
+      this.anims.create({
+        key: `${b}_walk`,
+        frames: [{ key: `${b}_0` }, { key: `${b}_1` }],
+        frameRate: 4,
+        repeat: -1,
+      });
+    }
   }
 }

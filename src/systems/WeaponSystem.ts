@@ -3,6 +3,7 @@ import { WeaponType, WEAPON_TYPES } from '../constants';
 import { Player } from '../entities/Player';
 import { Enemy } from '../entities/Enemy';
 import { Projectile } from '../entities/Projectile';
+import { showDamageNumber } from '../utils/damage';
 
 interface WeaponState {
   type: WeaponType;
@@ -117,6 +118,16 @@ export class WeaponSystem {
     });
   }
 
+  private applyDamageWithLifesteal(enemy: Enemy, damage: number, isCrit: boolean = false): boolean {
+    const dead = enemy.takeDamage(damage);
+    showDamageNumber(this.scene, enemy.sprite.x, enemy.sprite.y, damage, isCrit);
+    if (this.player.stats.lifesteal > 0) {
+      const stolen = Math.floor(damage * this.player.stats.lifesteal);
+      if (stolen > 0) this.player.heal(stolen);
+    }
+    return dead;
+  }
+
   private fireWeapon(type: WeaponType, px: number, py: number, dmgMult: number): void {
     const nearest = this.findNearestEnemy(px, py);
     const damage = Math.floor(WEAPON_DAMAGE[type] * dmgMult);
@@ -150,7 +161,7 @@ export class WeaponSystem {
       if (!e.sprite.active) return;
       const dist = Phaser.Math.Distance.Between(px, py, e.sprite.x, e.sprite.y);
       if (dist <= radius) {
-        const dead = e.takeDamage(damage);
+        const dead = this.applyDamageWithLifesteal(e, damage);
         if (dead) this.scene.events.emit('enemy-died', e);
       }
     });
@@ -214,7 +225,7 @@ export class WeaponSystem {
       this.lightningGraphics.strokePath();
       fromX = e.sprite.x; fromY = e.sprite.y;
 
-      const dead = e.takeDamage(damage);
+      const dead = this.applyDamageWithLifesteal(e, damage);
       if (dead) this.scene.events.emit('enemy-died', e);
     }
     this.scene.time.delayedCall(150, () => this.lightningGraphics.clear());
@@ -239,7 +250,7 @@ export class WeaponSystem {
         if (!e.sprite.active) return;
         const dist = Phaser.Math.Distance.Between(ox, oy, e.sprite.x, e.sprite.y);
         if (dist < 20) {
-          const dead = e.takeDamage(damage);
+          const dead = this.applyDamageWithLifesteal(e, damage);
           if (dead) this.scene.events.emit('enemy-died', e);
         }
       });
@@ -274,7 +285,7 @@ export class WeaponSystem {
         if (dist < hitRadius) {
           const enemyId = e.sprite.getData('id') || 0;
           const destroyed = proj.onHit(enemyId);
-          const dead = e.takeDamage(proj.damage);
+          const dead = this.applyDamageWithLifesteal(e, proj.damage);
           if (dead) this.scene.events.emit('enemy-died', e);
 
           if (isAoe) {
@@ -283,7 +294,7 @@ export class WeaponSystem {
               if (other === e || !other.sprite.active) return;
               const d2 = Phaser.Math.Distance.Between(proj.sprite.x, proj.sprite.y, other.sprite.x, other.sprite.y);
               if (d2 < aoeRadius) {
-                const dead2 = other.takeDamage(proj.damage);
+                const dead2 = this.applyDamageWithLifesteal(other, proj.damage);
                 if (dead2) this.scene.events.emit('enemy-died', other);
               }
             });
@@ -294,6 +305,21 @@ export class WeaponSystem {
         }
       }
     }
+  }
+
+  // Public method for archer rain special
+  fireArrow(px: number, py: number, tx: number, ty: number, isPiercing: boolean = false): void {
+    const dx = tx - px;
+    const dy = ty - py;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 0.1) return;
+    const speed = 320;
+    const damage = Math.floor(WEAPON_DAMAGE[WEAPON_TYPES.ENCHANTED_CROSSBOW] * this.player.stats.damage * 1.2);
+    const pierce = isPiercing ? 2 : 1;
+    const proj = new Projectile(this.scene, px, py, 'arrow',
+      (dx / dist) * speed, (dy / dist) * speed, damage, 2000, pierce);
+    this.projectiles.push(proj);
+    this.scene.events.emit('projectile-created', proj);
   }
 
   fireSalvo(px: number, py: number): void {
@@ -310,11 +336,10 @@ export class WeaponSystem {
 
   fireMeteor(px: number, py: number): void {
     const damage = Math.floor(120 * this.player.stats.damage);
-    // Find 5 enemy clusters and hit them
-    let targets: { x: number; y: number }[] = [];
     const sorted = [...this.enemies].filter(e => e.sprite.active)
       .sort((a, b) => Phaser.Math.Distance.Between(px, py, a.sprite.x, a.sprite.y) -
                        Phaser.Math.Distance.Between(px, py, b.sprite.x, b.sprite.y));
+    const targets: { x: number; y: number }[] = [];
     for (let i = 0; i < Math.min(5, sorted.length); i++) {
       targets.push({ x: sorted[i].sprite.x, y: sorted[i].sprite.y });
     }

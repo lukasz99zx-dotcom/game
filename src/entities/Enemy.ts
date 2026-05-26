@@ -3,13 +3,13 @@ import { EnemyType, ENEMY_TYPES, COLORS } from '../constants';
 import { EnemyStats } from '../types';
 
 export const ENEMY_DATA: Record<EnemyType, EnemyStats> = {
-  [ENEMY_TYPES.WOLF]:        { id: ENEMY_TYPES.WOLF,        name: 'Wolf',         hp: 30,   speed: 110, damage: 10, xpDrop: 3,  goldDrop: 1,  color: 0x8B7355, size: 24, isBoss: false },
-  [ENEMY_TYPES.SKELETON]:    { id: ENEMY_TYPES.SKELETON,    name: 'Skeleton',     hp: 25,   speed: 80,  damage: 8,  xpDrop: 2,  goldDrop: 1,  color: 0xF5F5DC, size: 24, isBoss: false },
-  [ENEMY_TYPES.ZOMBIE]:      { id: ENEMY_TYPES.ZOMBIE,      name: 'Zombie',       hp: 60,   speed: 55,  damage: 15, xpDrop: 5,  goldDrop: 2,  color: 0x5A8A5A, size: 28, isBoss: false },
-  [ENEMY_TYPES.GOBLIN]:      { id: ENEMY_TYPES.GOBLIN,      name: 'Goblin',       hp: 35,   speed: 100, damage: 12, xpDrop: 4,  goldDrop: 3,  color: 0x3CB371, size: 22, isBoss: false },
-  [ENEMY_TYPES.NECROMANCER]: { id: ENEMY_TYPES.NECROMANCER, name: 'Necromancer',  hp: 80,   speed: 65,  damage: 0,  xpDrop: 10, goldDrop: 5,  color: 0x4B0082, size: 28, isBoss: false },
-  [ENEMY_TYPES.DEMON]:       { id: ENEMY_TYPES.DEMON,       name: 'Demon',        hp: 120,  speed: 120, damage: 25, xpDrop: 12, goldDrop: 6,  color: 0xCC2200, size: 30, isBoss: false },
-  [ENEMY_TYPES.VAMPIRE]:     { id: ENEMY_TYPES.VAMPIRE,     name: 'Vampire',      hp: 100,  speed: 140, damage: 20, xpDrop: 12, goldDrop: 6,  color: 0x2A0A2A, size: 28, isBoss: false },
+  [ENEMY_TYPES.WOLF]:        { id: ENEMY_TYPES.WOLF,        name: 'Wolf',         hp: 45,   speed: 110, damage: 10, xpDrop: 3,  goldDrop: 1,  color: 0x8B7355, size: 24, isBoss: false },
+  [ENEMY_TYPES.SKELETON]:    { id: ENEMY_TYPES.SKELETON,    name: 'Skeleton',     hp: 35,   speed: 80,  damage: 8,  xpDrop: 2,  goldDrop: 1,  color: 0xF5F5DC, size: 24, isBoss: false },
+  [ENEMY_TYPES.ZOMBIE]:      { id: ENEMY_TYPES.ZOMBIE,      name: 'Zombie',       hp: 90,   speed: 55,  damage: 15, xpDrop: 5,  goldDrop: 2,  color: 0x5A8A5A, size: 28, isBoss: false },
+  [ENEMY_TYPES.GOBLIN]:      { id: ENEMY_TYPES.GOBLIN,      name: 'Goblin',       hp: 50,   speed: 100, damage: 12, xpDrop: 4,  goldDrop: 3,  color: 0x3CB371, size: 22, isBoss: false },
+  [ENEMY_TYPES.NECROMANCER]: { id: ENEMY_TYPES.NECROMANCER, name: 'Necromancer',  hp: 110,  speed: 65,  damage: 0,  xpDrop: 10, goldDrop: 5,  color: 0x4B0082, size: 28, isBoss: false },
+  [ENEMY_TYPES.DEMON]:       { id: ENEMY_TYPES.DEMON,       name: 'Demon',        hp: 160,  speed: 120, damage: 25, xpDrop: 12, goldDrop: 6,  color: 0xCC2200, size: 30, isBoss: false },
+  [ENEMY_TYPES.VAMPIRE]:     { id: ENEMY_TYPES.VAMPIRE,     name: 'Vampire',      hp: 130,  speed: 140, damage: 20, xpDrop: 12, goldDrop: 6,  color: 0x2A0A2A, size: 28, isBoss: false },
   [ENEMY_TYPES.OGRE_WARLORD]:{ id: ENEMY_TYPES.OGRE_WARLORD,name: 'Ogre Warlord',hp: 800,  speed: 50,  damage: 40, xpDrop: 80, goldDrop: 40, color: 0x8B6914, size: 64, isBoss: true  },
   [ENEMY_TYPES.BLACK_KNIGHT]:{ id: ENEMY_TYPES.BLACK_KNIGHT, name: 'Black Knight',hp: 1200, speed: 110, damage: 35, xpDrop: 120,goldDrop: 60, color: 0x111111, size: 64, isBoss: true  },
   [ENEMY_TYPES.ARCLICH]:     { id: ENEMY_TYPES.ARCLICH,     name: 'Arclich',      hp: 600,  speed: 55,  damage: 0,  xpDrop: 150,goldDrop: 75, color: 0x4B0082, size: 64, isBoss: true  },
@@ -31,6 +31,9 @@ export class Enemy {
   slowTimer: number = 0;
   isStunned: boolean = false;
   stunTimer: number = 0;
+  isFrozen: boolean = false;
+  frozenTimer: number = 0;
+  frozenSlowFactor: number = 0.9;
   isBlocking: boolean = false;
 
   private specialTimer: number = 0;
@@ -59,6 +62,12 @@ export class Enemy {
       this.sprite.setScale(1.0);
     }
 
+    // Play walk animation if it exists
+    const walkKey = type + '_walk';
+    if (scene.anims.exists(walkKey)) {
+      this.sprite.play(walkKey);
+    }
+
     this.hpBar = scene.add.graphics();
     this.hpBar.setDepth(6);
 
@@ -84,18 +93,48 @@ export class Enemy {
   }
 
   update(dt: number, playerX: number, playerY: number): void {
+    const now = this.scene.time.now;
+
+    // Handle stun
     if (this.isStunned) {
       this.stunTimer -= dt;
-      if (this.stunTimer <= 0) this.isStunned = false;
-      this.sprite.setVelocity(0, 0);
-      return;
+      if (this.stunTimer <= 0) {
+        this.isStunned = false;
+        this.sprite.clearTint();
+      } else {
+        this.sprite.setTint(0xFFFF00);
+        this.sprite.setVelocity(0, 0);
+        this.updateHpBar();
+        if (this.nameText) {
+          this.nameText.setPosition(this.sprite.x, this.sprite.y - ENEMY_DATA[this.type].size * 0.5 - 14);
+        }
+        return;
+      }
     }
+
+    // Handle freeze
+    if (this.isFrozen) {
+      this.frozenTimer -= dt;
+      if (this.frozenTimer <= 0) {
+        this.isFrozen = false;
+        this.sprite.clearTint();
+      } else {
+        this.sprite.setTint(0x8888FF);
+      }
+    }
+
     if (this.isSlowed) {
       this.slowTimer -= dt;
       if (this.slowTimer <= 0) this.isSlowed = false;
     }
 
-    const effectiveSpeed = this.isSlowed ? this.speed * 0.5 : this.speed;
+    let effectiveSpeed = this.speed;
+    if (this.isFrozen) {
+      effectiveSpeed = this.speed * (1 - this.frozenSlowFactor);
+    } else if (this.isSlowed) {
+      effectiveSpeed = this.speed * 0.5;
+    }
+
     this.specialTimer -= dt;
 
     const dx = playerX - this.sprite.x;
@@ -213,11 +252,13 @@ export class Enemy {
       return false;
     }
     this.hp -= amount;
-    // Flash red
-    this.sprite.setTint(0xFF4444);
-    this.scene.time.delayedCall(80, () => {
-      if (this.sprite && this.sprite.active) this.sprite.clearTint();
-    });
+    // Flash red (only if not stunned/frozen - those have their own tint)
+    if (!this.isStunned && !this.isFrozen) {
+      this.sprite.setTint(0xFF4444);
+      this.scene.time.delayedCall(80, () => {
+        if (this.sprite && this.sprite.active) this.sprite.clearTint();
+      });
+    }
     return this.hp <= 0;
   }
 
@@ -226,10 +267,16 @@ export class Enemy {
     this.slowTimer = duration;
   }
 
-  stun(duration: number): void {
+  stun(durationMs: number): void {
     this.isStunned = true;
-    this.stunTimer = duration;
+    this.stunTimer = durationMs;
     this.sprite.setVelocity(0, 0);
+  }
+
+  freeze(slowFactor: number, durationMs: number): void {
+    this.isFrozen = true;
+    this.frozenSlowFactor = slowFactor;
+    this.frozenTimer = durationMs;
   }
 
   private updateHpBar(): void {

@@ -84,8 +84,9 @@ export class LevelUpScene extends Phaser.Scene {
     zone.on('pointerover', () => { drawCard(true); });
     zone.on('pointerout', () => { drawCard(false); });
     zone.on('pointerdown', () => {
-      this.scene.stop();
       this.onChoose(option);
+      this.scene.resume(SCENE_KEYS.GAME);
+      this.scene.stop();
     });
   }
 }

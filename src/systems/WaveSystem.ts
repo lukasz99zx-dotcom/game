@@ -4,7 +4,6 @@ import { EnemyType, ENEMY_TYPES, WAVE_DURATION, BOSS_WAVE_INTERVAL } from '../co
 interface WaveConfig {
   enemies: { type: EnemyType; count: number; weight: number }[];
   spawnInterval: number; // ms between spawns
-  totalEnemies: number;
 }
 
 function buildWaveConfig(wave: number): WaveConfig {
@@ -31,13 +30,12 @@ function buildWaveConfig(wave: number): WaveConfig {
     pool.push({ type: ENEMY_TYPES.NECROMANCER, weight: 1 });
   }
 
-  const totalEnemies = 8 + wave * 3;
-  const spawnInterval = Math.max(200, 800 - wave * 30);
+  // Faster spawn rate scaling - no totalEnemies cap
+  const spawnInterval = Math.max(400, 1200 - wave * 40);
 
   return {
     enemies: pool.map(p => ({ ...p, count: 0 })),
     spawnInterval,
-    totalEnemies,
   };
 }
 
@@ -55,7 +53,6 @@ export class WaveSystem {
   currentWave: number = 0;
   waveTimer: number = 0;
   spawnTimer: number = 0;
-  spawned: number = 0;
   bossSpawned: boolean = false;
   config: WaveConfig;
   weightTotal: number = 0;
@@ -75,7 +72,6 @@ export class WaveSystem {
   startNextWave(): void {
     this.currentWave++;
     this.waveTimer = WAVE_DURATION;
-    this.spawned = 0;
     this.bossSpawned = false;
     this.config = buildWaveConfig(this.currentWave);
     this.weightTotal = this.config.enemies.reduce((s, e) => s + e.weight, 0);
@@ -98,14 +94,20 @@ export class WaveSystem {
     this.waveTimer -= dt;
     this.spawnTimer -= dt;
 
-    if (this.spawnTimer <= 0 && this.spawned < this.config.totalEnemies) {
+    // Continuous spawning - spawn enemies all wave long
+    if (this.spawnTimer <= 0) {
+      // Spawn 1-3 enemies per tick depending on wave progression within wave
+      const waveProgress = 1 - (this.waveTimer / WAVE_DURATION); // 0 to 1
+      const batchSize = Math.floor(1 + waveProgress * 2); // 1 at start, up to 3 near end
+      for (let i = 0; i < batchSize; i++) {
+        this.spawnEnemy();
+      }
       this.spawnTimer = this.config.spawnInterval;
-      this.spawnEnemy();
     }
 
     // Spawn boss mid-wave
     const bossType = getBossType(this.currentWave);
-    if (bossType && !this.bossSpawned && this.waveTimer < WAVE_DURATION * 0.6) {
+    if (bossType && !this.bossSpawned && this.waveTimer < WAVE_DURATION * 0.5) {
       this.bossSpawned = true;
       this.scene.events.emit('spawn-boss', bossType, ...this.getSpawnPosition());
     }
@@ -115,7 +117,6 @@ export class WaveSystem {
     const type = this.pickEnemyType();
     const [x, y] = this.getSpawnPosition();
     this.scene.events.emit('spawn-enemy', type, x, y);
-    this.spawned++;
   }
 
   private pickEnemyType(): EnemyType {

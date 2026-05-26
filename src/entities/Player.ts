@@ -5,26 +5,26 @@ import { HeroStats } from '../types';
 export const HERO_DATA: Record<HeroClass, HeroStats> = {
   [HERO_CLASSES.KNIGHT]: {
     id: HERO_CLASSES.KNIGHT, name: 'Knight', hp: 200, speed: 120,
-    startWeapon: WEAPON_TYPES.LIGHTNING_SWORD, specialName: 'Shield Wall',
-    specialCooldown: 10000, description: 'High HP tank. Circular sword attack.',
+    startWeapon: WEAPON_TYPES.LIGHTNING_SWORD, specialName: 'War Cry',
+    specialCooldown: 15000, description: 'High HP tank. War Cry stuns enemies.',
     color: COLORS.STONE_GRAY,
   },
   [HERO_CLASSES.ARCHER]: {
     id: HERO_CLASSES.ARCHER, name: 'Archer', hp: 120, speed: 170,
-    startWeapon: WEAPON_TYPES.ENCHANTED_CROSSBOW, specialName: 'Salvo',
-    specialCooldown: 8000, description: 'Fast and agile. Fires piercing arrows.',
+    startWeapon: WEAPON_TYPES.ENCHANTED_CROSSBOW, specialName: 'Rain of Arrows',
+    specialCooldown: 10000, description: 'Fast and agile. Fires piercing arrows.',
     color: COLORS.BROWN,
   },
   [HERO_CLASSES.MAGE]: {
     id: HERO_CLASSES.MAGE, name: 'Mage', hp: 80, speed: 140,
-    startWeapon: WEAPON_TYPES.FIREBALL, specialName: 'Meteor',
-    specialCooldown: 12000, description: 'Powerful AOE spells. Fragile.',
+    startWeapon: WEAPON_TYPES.FIREBALL, specialName: 'Time Freeze',
+    specialCooldown: 14000, description: 'Powerful AOE spells. Slows all enemies.',
     color: COLORS.PURPLE,
   },
   [HERO_CLASSES.ROGUE]: {
     id: HERO_CLASSES.ROGUE, name: 'Rogue', hp: 150, speed: 190,
-    startWeapon: WEAPON_TYPES.CHAIN_LIGHTNING, specialName: 'Smoke Bomb',
-    specialCooldown: 7000, description: 'Fastest hero. Chain lightning attacker.',
+    startWeapon: WEAPON_TYPES.CHAIN_LIGHTNING, specialName: 'Shadow Step',
+    specialCooldown: 8000, description: 'Fastest hero. Teleports behind enemies.',
     color: 0x222222,
   },
 };
@@ -40,13 +40,24 @@ export class Player {
   xp: number = 0;
   gold: number = 0;
   weapons: WeaponType[] = [];
-  stats = { damage: 1.0, attackSpeed: 1.0, pickupRange: 60, damageReduction: 0 };
+  stats = {
+    damage: 1.0,
+    attackSpeed: 1.0,
+    pickupRange: 60,
+    damageReduction: 0,
+    hpRegen: 0,      // HP per second
+    lifesteal: 0,    // fraction of damage healed
+  };
   specialCooldown: number;
   specialTimer: number = 0;
   isInvincible: boolean = false;
   invincibleTimer: number = 0;
   isShielded: boolean = false;
   shieldTimer: number = 0;
+
+  // Attack speed buff (used by War Cry)
+  private attackSpeedBuff: number = 0;
+  private attackSpeedBuffTimer: number = 0;
 
   private flashTween: Phaser.Tweens.Tween | null = null;
   private hpBar!: Phaser.GameObjects.Graphics;
@@ -61,28 +72,47 @@ export class Player {
     this.specialCooldown = data.specialCooldown;
     this.weapons = [data.startWeapon];
 
-    this.sprite = scene.physics.add.sprite(x, y, heroClass) as Phaser.Physics.Arcade.Sprite;
+    this.sprite = scene.physics.add.sprite(x, y, heroClass + '_0') as Phaser.Physics.Arcade.Sprite;
     this.sprite.setCollideWorldBounds(true);
     this.sprite.setDepth(10);
     (this.sprite.body as Phaser.Physics.Arcade.Body).setSize(24, 24);
+
+    // Start walk animation
+    if (scene.anims.exists(heroClass + '_walk')) {
+      this.sprite.play(heroClass + '_walk');
+    }
 
     this.hpBar = scene.add.graphics();
     this.hpBar.setDepth(11);
   }
 
-  update(dt: number): void {
+  update(delta: number): void {
     if (this.invincibleTimer > 0) {
-      this.invincibleTimer -= dt;
+      this.invincibleTimer -= delta;
       if (this.invincibleTimer <= 0) {
         this.isInvincible = false;
         this.sprite.setAlpha(1);
       }
     }
     if (this.shieldTimer > 0) {
-      this.shieldTimer -= dt;
+      this.shieldTimer -= delta;
       if (this.shieldTimer <= 0) this.isShielded = false;
     }
-    if (this.specialTimer > 0) this.specialTimer -= dt;
+    if (this.specialTimer > 0) this.specialTimer -= delta;
+
+    // Attack speed buff timer
+    if (this.attackSpeedBuffTimer > 0) {
+      this.attackSpeedBuffTimer -= delta;
+      if (this.attackSpeedBuffTimer <= 0) {
+        this.stats.attackSpeed = Math.max(0, this.stats.attackSpeed - this.attackSpeedBuff);
+        this.attackSpeedBuff = 0;
+      }
+    }
+
+    // HP regen
+    if (this.stats.hpRegen > 0) {
+      this.hp = Math.min(this.maxHp, this.hp + this.stats.hpRegen * delta / 1000);
+    }
 
     // HP bar above player
     this.hpBar.clear();
@@ -95,6 +125,20 @@ export class Player {
       const col = pct > 0.5 ? 0x00CC00 : pct > 0.25 ? 0xFFAA00 : 0xFF2200;
       this.hpBar.fillStyle(col);
       this.hpBar.fillRect(bx, by, Math.floor(36 * pct), 5);
+    }
+  }
+
+  setMoving(isMoving: boolean): void {
+    const walkKey = this.heroClass + '_walk';
+    const idleKey = this.heroClass + '_idle';
+    if (isMoving) {
+      if (this.sprite.anims.currentAnim?.key !== walkKey && this.scene.anims.exists(walkKey)) {
+        this.sprite.play(walkKey);
+      }
+    } else {
+      if (this.sprite.anims.currentAnim?.key !== idleKey && this.scene.anims.exists(idleKey)) {
+        this.sprite.play(idleKey);
+      }
     }
   }
 
@@ -143,6 +187,8 @@ export class Player {
       case 'attackSpeed': this.stats.attackSpeed += value; break;
       case 'pickupRange': this.stats.pickupRange += value; break;
       case 'damageReduction': this.stats.damageReduction = Math.min(0.75, this.stats.damageReduction + value); break;
+      case 'hpRegen': this.stats.hpRegen += value; break;
+      case 'lifesteal': this.stats.lifesteal = Math.min(0.5, this.stats.lifesteal + value); break;
     }
   }
 
@@ -151,21 +197,23 @@ export class Player {
     this.specialTimer = this.specialCooldown;
     switch (this.heroClass) {
       case HERO_CLASSES.KNIGHT:
-        this.isShielded = true;
-        this.shieldTimer = 2000;
-        this.scene.tweens.add({
-          targets: this.sprite, scaleX: 1.3, scaleY: 1.3,
-          duration: 200, yoyo: true, repeat: 4,
-        });
+        // War Cry - stun enemies + attack speed buff
+        this.attackSpeedBuff = 0.5;
+        this.stats.attackSpeed += 0.5;
+        this.attackSpeedBuffTimer = 5000;
+        this.scene.events.emit('knight-warcry', this.sprite.x, this.sprite.y);
         break;
       case HERO_CLASSES.ARCHER:
-        this.scene.events.emit('archer-salvo', this.sprite.x, this.sprite.y);
+        // Rain of Arrows - 12 arrows in all directions
+        this.scene.events.emit('archer-rain', this.sprite.x, this.sprite.y);
         break;
       case HERO_CLASSES.MAGE:
-        this.scene.events.emit('mage-meteor', this.sprite.x, this.sprite.y);
+        // Time Freeze - slow all enemies 90% for 5s
+        this.scene.events.emit('mage-timefreeze', this.sprite.x, this.sprite.y);
         break;
       case HERO_CLASSES.ROGUE:
-        this.scene.events.emit('rogue-smoke', this.sprite.x, this.sprite.y);
+        // Shadow Step - teleport behind nearest enemy
+        this.scene.events.emit('rogue-shadowstep', this.sprite.x, this.sprite.y);
         break;
     }
   }
