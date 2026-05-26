@@ -79,4 +79,8 @@ export const SCENE_KEYS = {
   GAME: 'GameScene',
   LEVEL_UP: 'LevelUpScene',
   GAME_OVER: 'GameOverScene',
+  PAUSE: 'PauseMenuScene',
 } as const;
+
+export const hpRegen = 'hpRegen';
+export const lifesteal = 'lifesteal';
