@@ -27,7 +27,7 @@ export class BootScene extends Phaser.Scene {
 
   private generatePlayerTextures(): void {
     // Knight - gray rectangle body with cross
-    const knight = this.make.graphics({ x: 0, y: 0, add: false });
+    const knight = this.make.graphics({ x: 0, y: 0 } as any);
     knight.fillStyle(COLORS.STONE_GRAY);
     knight.fillRect(4, 4, 24, 28);
     knight.fillStyle(COLORS.DARK_STONE);
@@ -42,7 +42,7 @@ export class BootScene extends Phaser.Scene {
     knight.destroy();
 
     // Archer - brown body with bow
-    const archer = this.make.graphics({ x: 0, y: 0, add: false });
+    const archer = this.make.graphics({ x: 0, y: 0 } as any);
     archer.fillStyle(COLORS.BROWN);
     archer.fillRect(8, 6, 16, 22);
     archer.fillStyle(COLORS.DARK_BROWN);
@@ -60,7 +60,7 @@ export class BootScene extends Phaser.Scene {
     archer.destroy();
 
     // Mage - purple robe with star
-    const mage = this.make.graphics({ x: 0, y: 0, add: false });
+    const mage = this.make.graphics({ x: 0, y: 0 } as any);
     mage.fillStyle(COLORS.PURPLE);
     mage.fillRect(8, 8, 16, 22);
     mage.fillStyle(COLORS.DARK_PURPLE);
@@ -76,7 +76,7 @@ export class BootScene extends Phaser.Scene {
     mage.destroy();
 
     // Rogue - dark body with hood
-    const rogue = this.make.graphics({ x: 0, y: 0, add: false });
+    const rogue = this.make.graphics({ x: 0, y: 0 } as any);
     rogue.fillStyle(0x222222);
     rogue.fillRect(8, 8, 16, 22);
     rogue.fillStyle(0x111111);
@@ -95,7 +95,7 @@ export class BootScene extends Phaser.Scene {
 
   private generateEnemyTextures(): void {
     // Wolf - brown quadruped
-    const wolf = this.make.graphics({ x: 0, y: 0, add: false });
+    const wolf = this.make.graphics({ x: 0, y: 0 } as any);
     wolf.fillStyle(0x8B7355);
     wolf.fillRect(4, 12, 24, 14); // body
     wolf.fillRect(20, 6, 10, 10); // head
@@ -109,7 +109,7 @@ export class BootScene extends Phaser.Scene {
     wolf.destroy();
 
     // Skeleton - white stick figure
-    const skeleton = this.make.graphics({ x: 0, y: 0, add: false });
+    const skeleton = this.make.graphics({ x: 0, y: 0 } as any);
     skeleton.fillStyle(0xF5F5DC); // bone white
     skeleton.fillCircle(16, 6, 6); // skull
     skeleton.fillRect(13, 11, 6, 12); // spine
@@ -125,7 +125,7 @@ export class BootScene extends Phaser.Scene {
     skeleton.destroy();
 
     // Zombie - green bloated humanoid
-    const zombie = this.make.graphics({ x: 0, y: 0, add: false });
+    const zombie = this.make.graphics({ x: 0, y: 0 } as any);
     zombie.fillStyle(0x5A8A5A);
     zombie.fillCircle(16, 8, 7); // head
     zombie.fillRect(8, 14, 16, 14); // torso (bloated)
@@ -141,7 +141,7 @@ export class BootScene extends Phaser.Scene {
     zombie.destroy();
 
     // Goblin - small green figure
-    const goblin = this.make.graphics({ x: 0, y: 0, add: false });
+    const goblin = this.make.graphics({ x: 0, y: 0 } as any);
     goblin.fillStyle(0x3CB371);
     goblin.fillCircle(16, 9, 8); // large head
     goblin.fillRect(10, 16, 12, 10); // small body
@@ -157,7 +157,7 @@ export class BootScene extends Phaser.Scene {
     goblin.destroy();
 
     // Necromancer - dark robed figure
-    const necro = this.make.graphics({ x: 0, y: 0, add: false });
+    const necro = this.make.graphics({ x: 0, y: 0 } as any);
     necro.fillStyle(0x1A001A);
     necro.fillRect(8, 8, 16, 24);
     necro.fillTriangle(8, 8, 24, 8, 16, 0);
@@ -173,7 +173,7 @@ export class BootScene extends Phaser.Scene {
     necro.destroy();
 
     // Demon - red menacing figure
-    const demon = this.make.graphics({ x: 0, y: 0, add: false });
+    const demon = this.make.graphics({ x: 0, y: 0 } as any);
     demon.fillStyle(0xCC2200);
     demon.fillCircle(16, 8, 7);
     demon.fillRect(8, 14, 16, 14);
@@ -192,7 +192,7 @@ export class BootScene extends Phaser.Scene {
     demon.destroy();
 
     // Vampire - elegant dark figure
-    const vampire = this.make.graphics({ x: 0, y: 0, add: false });
+    const vampire = this.make.graphics({ x: 0, y: 0 } as any);
     vampire.fillStyle(0x2A0A2A);
     vampire.fillCircle(16, 7, 6);
     vampire.fillRect(8, 12, 16, 18);
@@ -215,7 +215,7 @@ export class BootScene extends Phaser.Scene {
 
   private generateBossTextures(): void {
     // Ogre Warlord - huge armored brute (64x64)
-    const ogre = this.make.graphics({ x: 0, y: 0, add: false });
+    const ogre = this.make.graphics({ x: 0, y: 0 } as any);
     ogre.fillStyle(0x8B6914);
     ogre.fillCircle(32, 16, 14); // head
     ogre.fillRect(8, 28, 48, 32); // massive body
@@ -236,7 +236,7 @@ export class BootScene extends Phaser.Scene {
     ogre.destroy();
 
     // Black Knight - armored dark knight (64x64)
-    const blackKnight = this.make.graphics({ x: 0, y: 0, add: false });
+    const blackKnight = this.make.graphics({ x: 0, y: 0 } as any);
     blackKnight.fillStyle(0x111111);
     blackKnight.fillRect(16, 0, 32, 10); // helmet top
     blackKnight.fillRect(12, 8, 40, 16); // helmet
@@ -261,7 +261,7 @@ export class BootScene extends Phaser.Scene {
     blackKnight.destroy();
 
     // Arclich - undead spellcaster (64x64)
-    const arclich = this.make.graphics({ x: 0, y: 0, add: false });
+    const arclich = this.make.graphics({ x: 0, y: 0 } as any);
     arclich.fillStyle(0xF5F5DC);
     arclich.fillCircle(32, 14, 12); // skull
     arclich.fillStyle(0x1A001A);
@@ -282,7 +282,7 @@ export class BootScene extends Phaser.Scene {
     arclich.destroy();
 
     // Chaos Dragon - massive flying beast (64x64)
-    const dragon = this.make.graphics({ x: 0, y: 0, add: false });
+    const dragon = this.make.graphics({ x: 0, y: 0 } as any);
     dragon.fillStyle(0x8B0000);
     dragon.fillCircle(44, 18, 18); // head
     dragon.fillRect(8, 22, 48, 28); // body
@@ -308,7 +308,7 @@ export class BootScene extends Phaser.Scene {
 
   private generateProjectileTextures(): void {
     // Arrow
-    const arrow = this.make.graphics({ x: 0, y: 0, add: false });
+    const arrow = this.make.graphics({ x: 0, y: 0 } as any);
     arrow.fillStyle(COLORS.BROWN);
     arrow.fillRect(0, 3, 20, 2);
     arrow.fillTriangle(16, 0, 24, 4, 16, 8);
@@ -318,7 +318,7 @@ export class BootScene extends Phaser.Scene {
     arrow.destroy();
 
     // Fireball
-    const fireball = this.make.graphics({ x: 0, y: 0, add: false });
+    const fireball = this.make.graphics({ x: 0, y: 0 } as any);
     fireball.fillStyle(0xFF4400, 0.4);
     fireball.fillCircle(12, 12, 12);
     fireball.fillStyle(COLORS.ORANGE, 0.7);
@@ -329,7 +329,7 @@ export class BootScene extends Phaser.Scene {
     fireball.destroy();
 
     // Lightning bolt
-    const lightning = this.make.graphics({ x: 0, y: 0, add: false });
+    const lightning = this.make.graphics({ x: 0, y: 0 } as any);
     lightning.fillStyle(COLORS.YELLOW);
     lightning.fillRect(8, 0, 4, 8);
     lightning.fillRect(2, 6, 10, 4);
@@ -340,7 +340,7 @@ export class BootScene extends Phaser.Scene {
     lightning.destroy();
 
     // Chain lightning effect
-    const chainLightning = this.make.graphics({ x: 0, y: 0, add: false });
+    const chainLightning = this.make.graphics({ x: 0, y: 0 } as any);
     chainLightning.fillStyle(0x88FFFF);
     chainLightning.fillRect(0, 3, 4, 2);
     chainLightning.fillRect(3, 1, 4, 2);
@@ -351,7 +351,7 @@ export class BootScene extends Phaser.Scene {
     chainLightning.destroy();
 
     // Holy cross orb
-    const holyCross = this.make.graphics({ x: 0, y: 0, add: false });
+    const holyCross = this.make.graphics({ x: 0, y: 0 } as any);
     holyCross.fillStyle(0xFFDD44, 0.8);
     holyCross.fillCircle(10, 10, 10);
     holyCross.fillStyle(0xFFFFFF);
@@ -361,7 +361,7 @@ export class BootScene extends Phaser.Scene {
     holyCross.destroy();
 
     // Sword slash effect
-    const swordSlash = this.make.graphics({ x: 0, y: 0, add: false });
+    const swordSlash = this.make.graphics({ x: 0, y: 0 } as any);
     swordSlash.fillStyle(COLORS.SILVER, 0.8);
     swordSlash.fillCircle(40, 40, 38);
     swordSlash.fillStyle(COLORS.WHITE, 0.4);
@@ -370,7 +370,7 @@ export class BootScene extends Phaser.Scene {
     swordSlash.destroy();
 
     // Dagger
-    const dagger = this.make.graphics({ x: 0, y: 0, add: false });
+    const dagger = this.make.graphics({ x: 0, y: 0 } as any);
     dagger.fillStyle(COLORS.SILVER);
     dagger.fillRect(2, 5, 14, 2);
     dagger.fillTriangle(14, 3, 20, 6, 14, 9);
@@ -380,7 +380,7 @@ export class BootScene extends Phaser.Scene {
     dagger.destroy();
 
     // Goblin arrow (smaller)
-    const goblinArrow = this.make.graphics({ x: 0, y: 0, add: false });
+    const goblinArrow = this.make.graphics({ x: 0, y: 0 } as any);
     goblinArrow.fillStyle(0x444422);
     goblinArrow.fillRect(0, 2, 14, 2);
     goblinArrow.fillTriangle(10, 0, 16, 3, 10, 6);
@@ -388,7 +388,7 @@ export class BootScene extends Phaser.Scene {
     goblinArrow.destroy();
 
     // Necromancer spell
-    const necroSpell = this.make.graphics({ x: 0, y: 0, add: false });
+    const necroSpell = this.make.graphics({ x: 0, y: 0 } as any);
     necroSpell.fillStyle(0x9400D3, 0.5);
     necroSpell.fillCircle(10, 10, 10);
     necroSpell.fillStyle(0xCC44FF);
@@ -401,7 +401,7 @@ export class BootScene extends Phaser.Scene {
 
   private generatePickupTextures(): void {
     // XP crystal - cyan diamond
-    const xpCrystal = this.make.graphics({ x: 0, y: 0, add: false });
+    const xpCrystal = this.make.graphics({ x: 0, y: 0 } as any);
     xpCrystal.fillStyle(COLORS.CYAN, 0.9);
     xpCrystal.fillTriangle(6, 0, 12, 6, 6, 12);
     xpCrystal.fillTriangle(0, 6, 6, 0, 6, 12);
@@ -411,7 +411,7 @@ export class BootScene extends Phaser.Scene {
     xpCrystal.destroy();
 
     // Gold coin - yellow circle
-    const gold = this.make.graphics({ x: 0, y: 0, add: false });
+    const gold = this.make.graphics({ x: 0, y: 0 } as any);
     gold.fillStyle(COLORS.GOLD);
     gold.fillCircle(6, 6, 6);
     gold.fillStyle(COLORS.DARK_GOLD);
@@ -424,7 +424,7 @@ export class BootScene extends Phaser.Scene {
 
   private generateUITextures(): void {
     // Heart for HP
-    const heart = this.make.graphics({ x: 0, y: 0, add: false });
+    const heart = this.make.graphics({ x: 0, y: 0 } as any);
     heart.fillStyle(COLORS.BLOOD_RED);
     heart.fillCircle(5, 5, 5);
     heart.fillCircle(11, 5, 5);
@@ -433,7 +433,7 @@ export class BootScene extends Phaser.Scene {
     heart.destroy();
 
     // Empty heart
-    const emptyHeart = this.make.graphics({ x: 0, y: 0, add: false });
+    const emptyHeart = this.make.graphics({ x: 0, y: 0 } as any);
     emptyHeart.lineStyle(2, COLORS.BLOOD_RED);
     emptyHeart.strokeCircle(5, 5, 5);
     emptyHeart.strokeCircle(11, 5, 5);
@@ -442,7 +442,7 @@ export class BootScene extends Phaser.Scene {
     emptyHeart.destroy();
 
     // Weapon slot icon background
-    const weaponSlot = this.make.graphics({ x: 0, y: 0, add: false });
+    const weaponSlot = this.make.graphics({ x: 0, y: 0 } as any);
     weaponSlot.fillStyle(COLORS.DARK_STONE);
     weaponSlot.fillRect(0, 0, 40, 40);
     weaponSlot.lineStyle(2, COLORS.GOLD);
@@ -451,7 +451,7 @@ export class BootScene extends Phaser.Scene {
     weaponSlot.destroy();
 
     // Button texture
-    const button = this.make.graphics({ x: 0, y: 0, add: false });
+    const button = this.make.graphics({ x: 0, y: 0 } as any);
     button.fillStyle(COLORS.DARK_GOLD);
     button.fillRect(0, 0, 200, 60);
     button.fillStyle(COLORS.GOLD);
@@ -462,7 +462,7 @@ export class BootScene extends Phaser.Scene {
     button.destroy();
 
     // Particle texture
-    const particle = this.make.graphics({ x: 0, y: 0, add: false });
+    const particle = this.make.graphics({ x: 0, y: 0 } as any);
     particle.fillStyle(COLORS.WHITE);
     particle.fillCircle(4, 4, 4);
     particle.generateTexture('particle', 8, 8);
