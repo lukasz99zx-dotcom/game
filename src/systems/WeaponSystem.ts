@@ -305,14 +305,15 @@ export class WeaponSystem {
       if (!e.sprite.active) return;
       const dist = Phaser.Math.Distance.Between(px, py, e.sprite.x, e.sprite.y);
       if (dist <= radius) {
-        const dead = this.applyDamageWithLifesteal(e, damage);
-        if (dead) this.scene.events.emit('enemy-died', e);
-        // Knockback
         const angle = Math.atan2(e.sprite.y - py, e.sprite.x - px);
-        (e.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(Math.cos(angle)*200, Math.sin(angle)*200);
-        this.scene.time.delayedCall(300, () => {
-          if (e.sprite.active) (e.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(0,0);
-        });
+        const dead = this.applyDamageWithLifesteal(e, damage);
+        if (dead) { this.scene.events.emit('enemy-died', e); return; }
+        if (e.sprite.active) {
+          (e.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(Math.cos(angle)*200, Math.sin(angle)*200);
+          this.scene.time.delayedCall(300, () => {
+            if (e.sprite.active) (e.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(0,0);
+          });
+        }
       }
     });
   }
@@ -375,13 +376,18 @@ export class WeaponSystem {
           const d = Phaser.Math.Distance.Between(px, py, e.sprite.x, e.sprite.y);
           if (Math.abs(d - radius) < 15) {
             const dead = this.applyDamageWithLifesteal(e, Math.floor(damage/3));
-            if (dead) this.scene.events.emit('enemy-died', e);
-            // Knock outward
-            const a = Math.atan2(e.sprite.y-py, e.sprite.x-px);
-            (e.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(Math.cos(a)*180, Math.sin(a)*180);
-            this.scene.time.delayedCall(250, () => {
-              if(e.sprite.active)(e.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(0,0);
-            });
+            if (dead) {
+              this.scene.events.emit('enemy-died', e);
+              return; // don't touch sprite after death event
+            }
+            // Knock outward only if still alive
+            if (e.sprite.active) {
+              const a = Math.atan2(e.sprite.y-py, e.sprite.x-px);
+              (e.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(Math.cos(a)*180, Math.sin(a)*180);
+              this.scene.time.delayedCall(250, () => {
+                if (e.sprite.active) (e.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(0,0);
+              });
+            }
           }
         });
         radius += 8;

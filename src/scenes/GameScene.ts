@@ -67,6 +67,9 @@ export class GameScene extends Phaser.Scene {
   private joystickBaseGfx!: Phaser.GameObjects.Graphics;
   private joystickThumbGfx!: Phaser.GameObjects.Graphics;
 
+  // Special button: polled every frame for reliable multitouch on mobile
+  private specialBtnWasDown: boolean = false;
+
   // Death processing guard — prevents recursive overkill chain crashes
   private _dyingEnemies = new Set<Enemy>();
 
@@ -122,6 +125,7 @@ export class GameScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     if (this.isGameOver) return;
 
+    this.checkSpecialButton();
     this.player.update(delta);
     this.movePlayer(delta);
     this.updateEnemies(delta);
@@ -282,14 +286,8 @@ export class GameScene extends Phaser.Scene {
     this.drawJoystickThumb(100, GAME_HEIGHT - 90);
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      // Right side: check special button hit directly (works even during joystick use)
-      if (pointer.x > GAME_WIDTH * 0.55) {
-        const sbx = GAME_WIDTH - 60, sby = GAME_HEIGHT - 60;
-        if (Math.hypot(pointer.x - sbx, pointer.y - sby) < 48) {
-          this.player.useSpecial();
-        }
-        return;
-      }
+      // Right side touches handled by checkSpecialButton() in update loop
+      if (pointer.x > GAME_WIDTH * 0.55) return;
       if (this.joystickPointer) return;
       this.joystickPointer = pointer;
       this.joystickActive = true;
@@ -339,6 +337,32 @@ export class GameScene extends Phaser.Scene {
     this.joystickThumbGfx.fillCircle(x, y, 22);
     this.joystickThumbGfx.lineStyle(2, 0xFFFFFF, 0.8);
     this.joystickThumbGfx.strokeCircle(x, y, 22);
+  }
+
+  // Special button is polled every frame so it works even when joystick is active.
+  // We check all active pointers and fire on the leading edge (down → press → up).
+  private checkSpecialButton(): void {
+    const sbx = GAME_WIDTH - 60, sby = GAME_HEIGHT - 60;
+    const hitRadius = 58;
+    let isDown = false;
+    // Check up to 5 simultaneous touch points
+    const ptrs: Phaser.Input.Pointer[] = [
+      this.input.pointer1, this.input.pointer2,
+      this.input.pointer3, this.input.pointer4,
+      this.input.pointer5,
+    ];
+    for (const ptr of ptrs) {
+      if (!ptr?.isDown) continue;
+      if (ptr === this.joystickPointer) continue;
+      if (Math.hypot(ptr.x - sbx, ptr.y - sby) < hitRadius) {
+        isDown = true;
+        break;
+      }
+    }
+    if (isDown && !this.specialBtnWasDown) {
+      this.player.useSpecial();
+    }
+    this.specialBtnWasDown = isDown;
   }
 
   // ── Camera ─────────────────────────────────────────────────────────────────
@@ -833,51 +857,50 @@ export class GameScene extends Phaser.Scene {
   // ── Enemy Death ─────────────────────────────────────────────────────────────
 
   private handleEnemyDeath(enemy: Enemy): void {
-    if (!enemy.sprite.active) return;
-    // Guard against recursive overkill chains
-    if (this._dyingEnemies.has(enemy)) return;
+    if (!enemy.sprite.active || this._dyingEnemies.has(enemy)) return;
+
+    // Iterative BFS — zero recursion, safe for large overkill chains
+    const queue: Enemy[] = [enemy];
     this._dyingEnemies.add(enemy);
 
-    this.enemiesKilled++;
+    while (queue.length > 0) {
+      const e = queue.shift()!;
+      if (!e.sprite.active) continue;
 
-    const ex = enemy.sprite.x, ey = enemy.sprite.y;
+      this.enemiesKilled++;
+      const ex = e.sprite.x, ey = e.sprite.y;
 
-    // Drop XP and gold
-    this.spawnXpOrb(ex, ey, enemy.xpDrop);
-    if (enemy.goldDrop > 0) this.spawnGoldCoin(ex, ey, enemy.goldDrop);
+      this.spawnXpOrb(ex, ey, e.xpDrop);
+      if (e.goldDrop > 0) this.spawnGoldCoin(ex, ey, e.goldDrop);
 
-    // Death particles (capped at 6 to avoid GC spikes)
-    this.add.particles(ex, ey, 'particle', {
-      speed: { min: 40, max: 100 },
-      scale: { start: 0.7, end: 0 },
-      tint: [0xFF4444, 0xFF8844],
-      quantity: 6,
-      lifespan: 450,
-    }).explode(6);
+      this.add.particles(ex, ey, 'particle', {
+        speed: { min: 40, max: 100 },
+        scale: { start: 0.7, end: 0 },
+        tint: [0xFF4444, 0xFF8844],
+        quantity: 6,
+        lifespan: 450,
+      }).explode(6);
 
-    if (enemy.isBoss) {
-      this.hud.announce('BOSS DEFEATED!', 3000);
-      this.bossEnemy = null;
-    }
+      if (e.isBoss) {
+        this.hud.announce('BOSS DEFEATED!', 3000);
+        this.bossEnemy = null;
+      }
 
-    // Overkill: non-recursive — collect victims first, apply after
-    if (this.player.stats.overkill > 0) {
-      const victims: Enemy[] = [];
-      for (const e of this.enemies) {
-        if (!e.sprite.active || e === enemy || this._dyingEnemies.has(e)) continue;
-        if (Phaser.Math.Distance.Between(ex, ey, e.sprite.x, e.sprite.y) <= 80) {
-          victims.push(e);
+      if (this.player.stats.overkill > 0) {
+        for (const neighbor of this.enemies) {
+          if (!neighbor.sprite.active || this._dyingEnemies.has(neighbor)) continue;
+          if (Phaser.Math.Distance.Between(ex, ey, neighbor.sprite.x, neighbor.sprite.y) <= 80) {
+            showDamageNumber(this, neighbor.sprite.x, neighbor.sprite.y, 40);
+            neighbor.takeDamage(40);
+            this._dyingEnemies.add(neighbor);
+            queue.push(neighbor);
+          }
         }
       }
-      for (const v of victims) {
-        showDamageNumber(this, v.sprite.x, v.sprite.y, 40);
-        v.takeDamage(40);
-        this.handleEnemyDeath(v);
-      }
-    }
 
-    enemy.destroy();
-    this._dyingEnemies.delete(enemy);
+      e.destroy();
+      this._dyingEnemies.delete(e);
+    }
   }
 
   // ── Game Over ───────────────────────────────────────────────────────────────
