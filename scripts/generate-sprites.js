@@ -88,7 +88,15 @@ function makeSheet(frames) {
 }
 
 function save(name, frames, scale, outDir) {
-  const rendered = frames.map(({ rows, pal }) => renderFrame(rows, pal, scale));
+  // Normalize all frames to identical dimensions (fixes blurry/shifted frames)
+  const maxCols = Math.max(...frames.map(({ rows }) => Math.max(...rows.map(r => r.length))));
+  const maxRows = Math.max(...frames.map(({ rows }) => rows.length));
+  const normalized = frames.map(({ rows, pal }) => ({
+    rows: rows.map(r => r + '.'.repeat(maxCols - r.length))
+              .concat(Array(Math.max(0, maxRows - rows.length)).fill('.'.repeat(maxCols))),
+    pal,
+  }));
+  const rendered = normalized.map(({ rows, pal }) => renderFrame(rows, pal, scale));
   const { buf, W, H } = makeSheet(rendered);
   fs.writeFileSync(path.join(outDir, name+'.png'), encodePNG(W, H, buf));
   const fw = W / frames.length;

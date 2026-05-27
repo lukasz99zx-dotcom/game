@@ -20,17 +20,17 @@ const UPGRADE_POOL: UpgradeOption[] = [
   { id: 'w_frost',      name: 'Frost Aura',          description: 'Slows all enemies in range by 50%.',              type: 'weapon', weaponType: WEAPON_TYPES.FROST_AURA },
   { id: 'w_chain',      name: 'Chain Lightning',     description: 'Jumps between 4 enemies.',                       type: 'weapon', weaponType: WEAPON_TYPES.CHAIN_LIGHTNING },
   { id: 's_hp',         name: '+40 Max HP',          description: 'Increases maximum health by 40.',                 type: 'stat', statKey: 'maxHp', statValue: 40 },
-  { id: 's_heal',       name: 'Healing Potion',      description: 'Restore 50 HP immediately.',                     type: 'stat', statKey: 'healHp', statValue: 50 },
+  { id: 's_heal',       name: 'Healing Potion',      description: 'Restore 30 HP immediately.',                     type: 'stat', statKey: 'healHp', statValue: 30 },
   { id: 's_speed',      name: 'Swift Boots',         description: 'Increase movement speed by 20.',                  type: 'stat', statKey: 'speed', statValue: 20 },
   { id: 's_dmg',        name: 'Sharp Blade',         description: 'Increase all damage by 15%.',                    type: 'stat', statKey: 'damage', statValue: 0.15 },
   { id: 's_atkspd',     name: 'Combat Training',     description: 'Increase attack speed by 20%.',                  type: 'stat', statKey: 'attackSpeed', statValue: 0.20 },
   { id: 's_magnet',     name: 'Gold Magnet',         description: 'Increase pickup range by 30.',                   type: 'stat', statKey: 'pickupRange', statValue: 30 },
   { id: 's_armor',      name: 'Iron Skin',           description: 'Reduce incoming damage by 10%.',                 type: 'stat', statKey: 'damageReduction', statValue: 0.10 },
-  { id: 's_regen',      name: 'Regeneration',        description: 'Regenerate 3 HP per second.',                    type: 'stat', statKey: 'hpRegen', statValue: 3 },
-  { id: 's_regen2',     name: 'Vitality',            description: 'Regenerate 6 HP per second.',                    type: 'stat', statKey: 'hpRegen', statValue: 6 },
-  { id: 's_lifesteal',  name: 'Vampiric Touch',      description: 'Steal 8% of damage dealt as HP.',                type: 'stat', statKey: 'lifesteal', statValue: 0.08 },
-  { id: 's_lifesteal2', name: 'Blood Pact',          description: 'Steal 15% of damage dealt as HP.',               type: 'stat', statKey: 'lifesteal', statValue: 0.15 },
-  { id: 's_fullheal',   name: 'Divine Potion',       description: 'Fully restore all HP.',                          type: 'stat', statKey: 'healHp', statValue: 999 },
+  { id: 's_regen',      name: 'Regeneration',        description: 'Regenerate 1 HP per second.',                    type: 'stat', statKey: 'hpRegen', statValue: 1 },
+  { id: 's_regen2',     name: 'Vitality',            description: 'Regenerate 2 HP per second.',                    type: 'stat', statKey: 'hpRegen', statValue: 2 },
+  { id: 's_lifesteal',  name: 'Vampiric Touch',      description: 'Steal 4% of damage dealt as HP.',                type: 'stat', statKey: 'lifesteal', statValue: 0.04 },
+  { id: 's_lifesteal2', name: 'Blood Pact',          description: 'Steal 7% of damage dealt as HP.',                type: 'stat', statKey: 'lifesteal', statValue: 0.07 },
+  { id: 's_fullheal',   name: 'Divine Potion',       description: 'Restore 60 HP immediately.',                     type: 'stat', statKey: 'healHp', statValue: 60 },
 
   // === 10 NEW SKILLS ===
 
@@ -66,6 +66,9 @@ export class GameScene extends Phaser.Scene {
   private joystickRadius = 50;
   private joystickBaseGfx!: Phaser.GameObjects.Graphics;
   private joystickThumbGfx!: Phaser.GameObjects.Graphics;
+
+  // Death processing guard — prevents recursive overkill chain crashes
+  private _dyingEnemies = new Set<Enemy>();
 
   // State
   private isGameOver: boolean = false;
@@ -212,7 +215,7 @@ export class GameScene extends Phaser.Scene {
 
   private trySpawnLootMagnet(delta: number): void {
     this.lootMagnetTimer += delta;
-    if (this.lootMagnetTimer >= 50000 && this.lootMagnetCount < this.MAX_MAGNETS) {
+    if (this.lootMagnetTimer >= 25000 && this.lootMagnetCount < this.MAX_MAGNETS) {
       this.lootMagnetTimer = 0;
       // Spawn at random position near center of world (not edge)
       const x = 200 + Math.random() * (WORLD_WIDTH - 400);
@@ -229,6 +232,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnXpOrb(x: number, y: number, amount: number): void {
+    if (this.xpOrbs.getLength() >= 300) {
+      // Auto-collect oldest orb to keep pool size bounded
+      const oldest = this.xpOrbs.getChildren()[0] as Phaser.Physics.Arcade.Sprite;
+      if (oldest?.active) {
+        this.player.addXp(oldest.getData('value') || 1);
+        oldest.destroy();
+      }
+    }
     const orb = this.physics.add.sprite(x, y, 'xp_crystal').setDepth(3);
     orb.setData('value', amount);
     (orb.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
@@ -242,6 +253,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnGoldCoin(x: number, y: number, amount: number): void {
+    if (this.goldCoins.getLength() >= 200) {
+      const oldest = this.goldCoins.getChildren()[0] as Phaser.Physics.Arcade.Sprite;
+      if (oldest?.active) {
+        this.player.addGold(oldest.getData('value') || 1);
+        oldest.destroy();
+      }
+    }
     const coin = this.physics.add.sprite(x, y, 'gold_coin').setDepth(3);
     coin.setData('value', amount);
     (coin.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
@@ -264,7 +282,14 @@ export class GameScene extends Phaser.Scene {
     this.drawJoystickThumb(100, GAME_HEIGHT - 90);
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      if (pointer.x > GAME_WIDTH * 0.6) return; // Right side is for special button
+      // Right side: check special button hit directly (works even during joystick use)
+      if (pointer.x > GAME_WIDTH * 0.55) {
+        const sbx = GAME_WIDTH - 60, sby = GAME_HEIGHT - 60;
+        if (Math.hypot(pointer.x - sbx, pointer.y - sby) < 48) {
+          this.player.useSpecial();
+        }
+        return;
+      }
       if (this.joystickPointer) return;
       this.joystickPointer = pointer;
       this.joystickActive = true;
@@ -363,8 +388,11 @@ export class GameScene extends Phaser.Scene {
 
   // ── Events ─────────────────────────────────────────────────────────────────
 
+  private readonly MAX_ENEMIES = 160;
+
   private setupEvents(): void {
     this.events.on('spawn-enemy', (type: EnemyType, x: number, y: number) => {
+      if (this.enemies.length >= this.MAX_ENEMIES) return;
       this.spawnEnemy(type, x, y);
     });
 
@@ -624,15 +652,21 @@ export class GameScene extends Phaser.Scene {
   private updateEnemies(dt: number): void {
     const px = this.player.sprite.x;
     const py = this.player.sprite.y;
+    const toExecute: Enemy[] = [];
     for (const enemy of this.enemies) {
       if (!enemy.sprite.active) continue;
       enemy.update(dt, px, py);
-      // Execute: instantly kill enemies below threshold HP
-      if (this.player.stats.execute > 0 && enemy.hp < enemy.maxHp * this.player.stats.execute && enemy.hp > 0) {
-        const dead = enemy.takeDamage(enemy.hp);
-        showDamageNumber(this, enemy.sprite.x, enemy.sprite.y, enemy.hp, true);
-        if (dead) this.handleEnemyDeath(enemy);
+      // Collect execute candidates — process AFTER loop to avoid array mutation
+      if (this.player.stats.execute > 0 && enemy.hp > 0 &&
+          enemy.hp < enemy.maxHp * this.player.stats.execute) {
+        toExecute.push(enemy);
       }
+    }
+    for (const enemy of toExecute) {
+      if (!enemy.sprite.active) continue;
+      showDamageNumber(this, enemy.sprite.x, enemy.sprite.y, enemy.hp, true);
+      enemy.takeDamage(enemy.hp);
+      this.handleEnemyDeath(enemy);
     }
   }
 
@@ -800,41 +834,50 @@ export class GameScene extends Phaser.Scene {
 
   private handleEnemyDeath(enemy: Enemy): void {
     if (!enemy.sprite.active) return;
+    // Guard against recursive overkill chains
+    if (this._dyingEnemies.has(enemy)) return;
+    this._dyingEnemies.add(enemy);
+
     this.enemiesKilled++;
 
-    // Drop XP and gold
-    this.spawnXpOrb(enemy.sprite.x, enemy.sprite.y, enemy.xpDrop);
-    if (enemy.goldDrop > 0) this.spawnGoldCoin(enemy.sprite.x, enemy.sprite.y, enemy.goldDrop);
+    const ex = enemy.sprite.x, ey = enemy.sprite.y;
 
-    // Death particles
-    this.add.particles(enemy.sprite.x, enemy.sprite.y, 'particle', {
-      speed: { min: 40, max: 120 },
-      scale: { start: 0.8, end: 0 },
-      tint: [0xFF4444, 0xFF8844, 0xFFAA44],
-      quantity: 8,
-      lifespan: 500,
-    }).explode(8);
+    // Drop XP and gold
+    this.spawnXpOrb(ex, ey, enemy.xpDrop);
+    if (enemy.goldDrop > 0) this.spawnGoldCoin(ex, ey, enemy.goldDrop);
+
+    // Death particles (capped at 6 to avoid GC spikes)
+    this.add.particles(ex, ey, 'particle', {
+      speed: { min: 40, max: 100 },
+      scale: { start: 0.7, end: 0 },
+      tint: [0xFF4444, 0xFF8844],
+      quantity: 6,
+      lifespan: 450,
+    }).explode(6);
 
     if (enemy.isBoss) {
       this.hud.announce('BOSS DEFEATED!', 3000);
       this.bossEnemy = null;
     }
 
-    // Overkill: enemies die exploding
+    // Overkill: non-recursive — collect victims first, apply after
     if (this.player.stats.overkill > 0) {
-      const ex = enemy.sprite.x, ey = enemy.sprite.y;
-      this.enemies.forEach(e => {
-        if (!e.sprite.active || e === enemy) return;
-        const d = Phaser.Math.Distance.Between(ex, ey, e.sprite.x, e.sprite.y);
-        if (d <= 80) {
-          const dead = e.takeDamage(40);
-          showDamageNumber(this, e.sprite.x, e.sprite.y, 40);
-          if (dead) this.handleEnemyDeath(e);
+      const victims: Enemy[] = [];
+      for (const e of this.enemies) {
+        if (!e.sprite.active || e === enemy || this._dyingEnemies.has(e)) continue;
+        if (Phaser.Math.Distance.Between(ex, ey, e.sprite.x, e.sprite.y) <= 80) {
+          victims.push(e);
         }
-      });
+      }
+      for (const v of victims) {
+        showDamageNumber(this, v.sprite.x, v.sprite.y, 40);
+        v.takeDamage(40);
+        this.handleEnemyDeath(v);
+      }
     }
 
     enemy.destroy();
+    this._dyingEnemies.delete(enemy);
   }
 
   // ── Game Over ───────────────────────────────────────────────────────────────

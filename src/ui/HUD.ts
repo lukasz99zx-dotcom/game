@@ -96,11 +96,6 @@ export class HUD {
       fontSize: '10px', fontFamily: 'monospace', color: '#AAFFAA',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(102);
 
-    // Make special button interactive
-    const zone = this.scene.add.zone(GAME_WIDTH - 60, GAME_HEIGHT - 60, 90, 90)
-      .setInteractive().setScrollFactor(0).setDepth(103);
-    zone.on('pointerdown', () => this.player.useSpecial());
-
     // Boss HP bar (hidden by default)
     this.bossHpBar = this.scene.add.graphics().setScrollFactor(0).setDepth(100);
     this.bossHpText = this.scene.add.text(GAME_WIDTH / 2, 62, '', {

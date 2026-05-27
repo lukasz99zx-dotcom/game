@@ -4,25 +4,25 @@ import { HeroStats } from '../types';
 
 export const HERO_DATA: Record<HeroClass, HeroStats> = {
   [HERO_CLASSES.KNIGHT]: {
-    id: HERO_CLASSES.KNIGHT, name: 'Knight', hp: 200, speed: 120,
+    id: HERO_CLASSES.KNIGHT, name: 'Knight', hp: 200, speed: 155,
     startWeapon: WEAPON_TYPES.LIGHTNING_SWORD, specialName: 'War Cry',
     specialCooldown: 15000, description: 'High HP tank. War Cry stuns enemies.',
     color: COLORS.STONE_GRAY,
   },
   [HERO_CLASSES.ARCHER]: {
-    id: HERO_CLASSES.ARCHER, name: 'Archer', hp: 120, speed: 170,
+    id: HERO_CLASSES.ARCHER, name: 'Archer', hp: 120, speed: 200,
     startWeapon: WEAPON_TYPES.ENCHANTED_CROSSBOW, specialName: 'Rain of Arrows',
     specialCooldown: 10000, description: 'Fast and agile. Fires piercing arrows.',
     color: COLORS.BROWN,
   },
   [HERO_CLASSES.MAGE]: {
-    id: HERO_CLASSES.MAGE, name: 'Mage', hp: 80, speed: 140,
+    id: HERO_CLASSES.MAGE, name: 'Mage', hp: 80, speed: 170,
     startWeapon: WEAPON_TYPES.FIREBALL, specialName: 'Time Freeze',
     specialCooldown: 14000, description: 'Powerful AOE spells. Slows all enemies.',
     color: COLORS.PURPLE,
   },
   [HERO_CLASSES.ROGUE]: {
-    id: HERO_CLASSES.ROGUE, name: 'Rogue', hp: 150, speed: 190,
+    id: HERO_CLASSES.ROGUE, name: 'Rogue', hp: 150, speed: 225,
     startWeapon: WEAPON_TYPES.CHAIN_LIGHTNING, specialName: 'Shadow Step',
     specialCooldown: 8000, description: 'Fastest hero. Teleports behind enemies.',
     color: 0x222222,

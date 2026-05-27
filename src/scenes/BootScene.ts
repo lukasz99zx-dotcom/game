@@ -10,21 +10,21 @@ export class BootScene extends Phaser.Scene {
     this.load.spritesheet('knight', 'assets/sprites/knight.png', { frameWidth: 45, frameHeight: 60 });
     this.load.spritesheet('archer', 'assets/sprites/archer.png', { frameWidth: 45, frameHeight: 60 });
     this.load.spritesheet('mage',   'assets/sprites/mage.png',   { frameWidth: 45, frameHeight: 60 });
-    this.load.spritesheet('rogue',  'assets/sprites/rogue.png',  { frameWidth: 45, frameHeight: 60 });
+    this.load.spritesheet('rogue',  'assets/sprites/rogue.png',  { frameWidth: 48, frameHeight: 60 });
 
     // Regular enemies
-    this.load.spritesheet('wolf',        'assets/sprites/wolf.png',        { frameWidth: 54, frameHeight: 48 });
+    this.load.spritesheet('wolf',        'assets/sprites/wolf.png',        { frameWidth: 69, frameHeight: 48 });
     this.load.spritesheet('skeleton',    'assets/sprites/skeleton.png',    { frameWidth: 45, frameHeight: 60 });
     this.load.spritesheet('zombie',      'assets/sprites/zombie.png',      { frameWidth: 45, frameHeight: 60 });
     this.load.spritesheet('goblin',      'assets/sprites/goblin.png',      { frameWidth: 48, frameHeight: 60 });
     this.load.spritesheet('necromancer', 'assets/sprites/necromancer.png', { frameWidth: 48, frameHeight: 60 });
     this.load.spritesheet('demon',       'assets/sprites/demon.png',       { frameWidth: 48, frameHeight: 60 });
-    this.load.spritesheet('vampire',     'assets/sprites/vampire.png',     { frameWidth: 45, frameHeight: 60 });
+    this.load.spritesheet('vampire',     'assets/sprites/vampire.png',     { frameWidth: 48, frameHeight: 60 });
 
     // Bosses: 2 frames
     this.load.spritesheet('ogre_warlord', 'assets/sprites/ogre_warlord.png', { frameWidth: 48, frameHeight: 63 });
-    this.load.spritesheet('black_knight', 'assets/sprites/black_knight.png', { frameWidth: 45, frameHeight: 63 });
-    this.load.spritesheet('arclich',      'assets/sprites/arclich.png',      { frameWidth: 45, frameHeight: 63 });
+    this.load.spritesheet('black_knight', 'assets/sprites/black_knight.png', { frameWidth: 48, frameHeight: 63 });
+    this.load.spritesheet('arclich',      'assets/sprites/arclich.png',      { frameWidth: 48, frameHeight: 63 });
     this.load.spritesheet('chaos_dragon', 'assets/sprites/chaos_dragon.png', { frameWidth: 48, frameHeight: 63 });
 
     // Pickups: 2 frames
